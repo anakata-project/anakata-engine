@@ -1,20 +1,21 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  extends: ['../anakata-ui'],
+
   modules: [
-    '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/i18n'
+    '@nuxt/eslint'
   ],
 
-  devtools: {
-    enabled: true
+  css: ['~/assets/css/engine.css'],
+
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://localhost:8000'
+    }
   },
 
-  css: ['~/assets/css/main.css'],
-
-  routeRules: {
-    '/': { prerender: true }
+  devServer: {
+    port: 3000
   },
 
   compatibilityDate: '2026-06-30',
@@ -26,5 +27,11 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  i18n: {
+    locales: [
+      { code: 'en', language: 'en', file: 'en.json' }
+    ]
   }
 })

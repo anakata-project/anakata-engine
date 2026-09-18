@@ -1,0 +1,48 @@
+{
+  "seo": {
+    "description": "Book an Anakata Galápagos yacht expedition — sixteen guests at a time."
+  },
+  "nav": {
+    "expeditions": "Expeditions",
+    "charter": "Private Charter"
+  },
+  "brand": {
+    "alt": "ANAKATA",
+    "subtitle": "INTIMATE YACHT EXPEDITIONS"
+  },
+  "hero": {
+    "coords": "0°40′S 90°33′W · Galápagos, Ecuador",
+    "titleLine1": "The archipelago,",
+    "titleLine2": "sixteen guests at a time",
+    "sub": "Seven nights, Sunday to Sunday, from San Cristóbal. Two expedition yachts, nine cabins each — never more."
+  },
+  "crumbs": {
+    "dates": "1 · Dates & Guests",
+    "itinerary": "2 · Itinerary & Departure",
+    "trip": "3 · Trip Details",
+    "cabins": "4 · Cabins & Layout",
+    "details": "5 · Your Details",
+    "confirmation": "6 · Confirmation"
+  },
+  "footer": {
+    "line1": "Anakata · Intimate yacht expeditions · Galápagos",
+    "line2Before": "0°40′S 90°33′W",
+    "line2After": " · info{'@'}anakata.co · anakata.co"
+  },
+  "shell": {
+    "apiOk": "API · OK",
+    "apiDown": "API · DOWN"
+  },
+  "pages": {
+    "home": "Book Your Expedition",
+    "itineraries": "Itinerary & Departure",
+    "tripDetails": "Trip Details",
+    "cabins": "Cabins & Layout",
+    "details": "Your Details",
+    "confirmation": "Confirmation",
+    "charter": "Private Charter",
+    "comingIn": "Coming in Sprint {n}",
+    "notFound": "Page not found",
+    "backHome": "Expeditions"
+  }
+}

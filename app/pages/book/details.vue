@@ -3,5 +3,5 @@ import PlaceholderPage from '~/components/shell/PlaceholderPage.vue'
 </script>
 
 <template>
-  <PlaceholderPage title-key="pages.home" />
+  <PlaceholderPage title-key="pages.details" />
 </template>
