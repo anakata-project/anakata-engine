@@ -11,26 +11,26 @@ Three systems for Anakata (Galápagos yacht expeditions, yachts ANAMARA and ANAT
 - **Booking Engine** (anakata.co) — the shop window: renders only what the RMS publishes, captures behaviour and requests.
 - **CRM** — the relationship: contacts, identity, attribution, consent, lifecycle, segments, journeys, deals, tasks, conversations. **The CRM has no write path to money.**
 
-Repos (all open in one Cursor multi-root workspace):
+Repos (all open in one Cursor multi-root workspace). The RMS and CRM are separate **systems** (separate API modules and databases) but share **one frontend**, `anakata-panel`:
+
 | Repo | What | Port |
 |---|---|---|
 | `anakata-api` | Laravel 13 + MySQL 8 + Redis. Modules: Rms, Crm, Engine, Shared | 8000 |
 | `anakata-ui` | Shared Nuxt layer: design tokens, Nuxt UI theme, shared components, composables, API types | — |
-| `anakata-rms` | Nuxt 4 + Nuxt UI, SPA, staff back office | 3001 |
-| `anakata-crm` | Nuxt 4 + Nuxt UI, SPA, staff CRM | 3002 |
+| `anakata-panel` | Nuxt 4 + Nuxt UI, SPA, staff panel containing **both the RMS and the CRM** (header switch between them) | 3001 |
 | `anakata-engine` | Nuxt 4 + Nuxt UI, SSR, public booking engine | 3000 |
 
 ## Where the requirements live
 All requirements are in `anakata-api/docs/requirements/` (from other repos: `../anakata-api/docs/requirements/`).
-Sprints are in `anakata-api/docs/sprints/`. Read `docs/requirements/08-dev-decisions.md` first — it records architecture choices and resolves contradictions between the documents.
+Sprints are in `anakata-api/docs/sprints/sprint-NN/` — a `README.md` (context for the whole sprint) and ordered task files (`01-….md`, `02-….md`), handed to you **one at a time**. Read `docs/requirements/08-dev-decisions.md` first — it records architecture choices and resolves contradictions between the documents.
 
 **Order of authority when documents disagree** (highest first):
 1. `08-dev-decisions.md` (development decisions + resolved contradictions)
 2. `05-decisions-and-open-questions.md` (Anakata's decisions of 12 Sep 2026)
 3. `07-three-system-integration-contract.md` (field ownership, events)
 4. `01`–`04` (functional spec, data model, business rules, engine contract)
-5. The RMS and CRM prototypes (HTML) — behaviour and design reference
-6. The booking-engine `SPEC.md` and its prototype — **v3, written before the 12 Sep decisions**; its design is the reference, but its business rules lose to everything above.
+5. The RMS and CRM prototypes (HTML) — both implemented in `anakata-panel` — behaviour and design reference
+6. The booking-engine `booking_engine_SPEC.md` (with `booking_engine_README.md`) and its prototype `prototype/booking_engine_index.html` — **v3, written before the 12 Sep decisions**; its design is the reference, but its business rules lose to everything above.
 
 `examples/seed-data.json` = fixtures. `examples/booking-engine-feed.json` = feed shape. `screenshots/` = visual acceptance reference.
 
@@ -51,11 +51,11 @@ Sprints are in `anakata-api/docs/sprints/`. Read `docs/requirements/08-dev-decis
 - Never invent business values, copy, enums or statuses. Enums come from doc 02 and the prototypes (e.g. `main_channel` has 8 values, `channel_of_origin` 40 — take them from the prototype source, do not make them up).
 
 ## Design fidelity
-The design is decided: **the apps must look exactly like the prototypes** (`prototype/index.html` = RMS, `prototype/crm.html` = CRM, the booking-engine prototype = engine). When building a screen, open the prototype's HTML/CSS for that screen and the matching screenshot, and match spacing, type, colour, borders and states. Square corners, hairline borders, uppercase mono labels, no shadows, no rounded Nuxt UI defaults. Check both dark (default) and light themes.
+The design is decided: **the apps must look exactly like the prototypes** (`prototype/rms_index.html` = RMS screens of the panel, `prototype/crm_index.html` = CRM screens of the panel, `prototype/booking_engine_index.html` = engine). When building a screen, open the prototype's HTML/CSS for that screen and the matching screenshot, and match spacing, type, colour, borders and states. Square corners, hairline borders, uppercase mono labels, no shadows, no rounded Nuxt UI defaults. Check both dark (default) and light themes.
 
-## How to work a sprint
-1. Read the sprint file and every document section it lists **before** writing code.
-2. Stay inside the sprint's scope. If something outside it is needed, note it instead of building it.
+## How to work a task
+1. You receive **one task file** at a time. Read the sprint's `README.md` first, then the task, then every document the task lists under "Read first" — before writing code.
+2. Do **only that task**. Do not start the next task, even if it looks obvious. If something outside the task is needed, write it under "Notes for later" in the report instead of building it.
 3. Write tests for every rule and calculation you implement.
-4. Lint, typecheck and tests must pass before you say you are done.
-5. Finish by writing `anakata-api/docs/sprints/reports/SPRINT-XX-<repo>.md`: what was built, what deviates from the sprint and why, open questions, and anything the next sprint must know.
+4. The task's checks (lint, typecheck, tests) must pass before you say you are done. In anakata-api, run them inside Docker (see `laravel.mdc`).
+5. Finish by **appending a section** to the sprint's `REPORT.md` (`anakata-api/docs/sprints/sprint-NN/REPORT.md`): task number and title, what was built, files touched, deviations from the task and why, open questions, notes for later.

@@ -1,5 +1,5 @@
 ---
-description: Nuxt 4 + Nuxt UI conventions for the Anakata apps (rms, crm, engine)
+description: Nuxt 4 + Nuxt UI conventions for the Anakata apps (panel, engine)
 globs: ["**/*.vue", "**/*.ts", "nuxt.config.ts", "app.config.ts", "**/*.css"]
 alwaysApply: true
 ---
@@ -8,17 +8,16 @@ alwaysApply: true
 
 ## Stack
 Nuxt 4 (`app/` directory), Nuxt UI v4, Tailwind CSS v4, TypeScript strict, pnpm.
-Every app **extends the `anakata-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (RMS and CRM are identical). **The engine differs** (page background `--forest`, larger buttons: 11px / .24em / 15px 32px, easing curves), so anakata-engine adds its own overrides in its `app.config.ts`, which Nuxt merges over the layer's.
+Every app **extends the `anakata-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (the panel; RMS and CRM prototypes share identical CSS). **The engine differs** (page background `--forest`, larger buttons: 11px / .24em / 15px 32px, easing curves), so anakata-engine adds its own overrides in its `app.config.ts`, which Nuxt merges over the layer's.
 
 | App | Rendering | Users |
 |---|---|---|
-| anakata-rms | `ssr: false` (SPA) | staff, Sanctum cookie session |
-| anakata-crm | `ssr: false` (SPA) | staff, Sanctum cookie session |
+| anakata-panel | `ssr: false` (SPA) | staff (RMS + CRM), Sanctum cookie session |
 | anakata-engine | SSR | public guests; SEO matters |
 
 ## Code
 - `<script setup lang="ts">` only. Composition API. No Options API, no `any`.
-- Pages in `app/pages`, one folder per module of the prototype's navigation. Feature components in `app/components/<module>/`.
+- anakata-panel: see `panel.mdc` for its structure. anakata-engine: pages in `app/pages`, feature components in `app/components/<step-or-area>/`.
 - Data fetching only through the layer's `useApi()` (`useFetch`/`$fetch` wrappers with credentials, base URL and CSRF handled). Types come from the layer's generated OpenAPI types — never hand-write API response types.
 - State: composables + `useState`. Use Pinia only for large multi-step state (the engine's booking flow).
 - UI strings go through i18n (`en` only). Content that the RMS publishes (engine copy, itinerary text, fees, guest rules) comes from the API, never from i18n files.
