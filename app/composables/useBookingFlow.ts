@@ -1,6 +1,22 @@
-import type { EngineSettings } from '../types/api'
+import type { CheckoutPath, EngineQuote, EngineSettings } from '../types/api'
+import type { CabinSelection } from '../utils/cabProblems'
+import type { PromoState } from '../utils/promoState'
+import { emptyPromo } from '../utils/promoState'
 
 export const FLOW_STORAGE_KEY = 'anakata-engine-flow'
+
+export type FlowGuest = {
+  cabinCode: string
+  nationality: string
+  ecuadorResident: boolean
+  isChild: boolean
+}
+
+export type ConfirmationSnapshot = {
+  path: CheckoutPath
+  references: Array<string>
+  email: string
+}
 
 export type BookingFlow = {
   adults: number
@@ -11,6 +27,25 @@ export type BookingFlow = {
   departureId: number | null
   checkoutToken: string | null
   checkoutExpiresAt: string | null
+  holdExtended: boolean
+  cabins: Array<CabinSelection>
+  selectedCabinIndex: number
+  path: CheckoutPath
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  preferredChannel: 'EMAIL' | 'PHONE' | 'WHATSAPP'
+  travelAdvisor: boolean
+  notes: string
+  marketing: boolean
+  guests: Array<FlowGuest>
+  pngCollected: boolean
+  tctCollected: boolean
+  declarations: Array<string>
+  promo: PromoState
+  serverQuote: EngineQuote | null
+  confirmation: ConfirmationSnapshot | null
 }
 
 export function emptyFlow(): BookingFlow {
@@ -22,7 +57,26 @@ export function emptyFlow(): BookingFlow {
     itineraryCode: null,
     departureId: null,
     checkoutToken: null,
-    checkoutExpiresAt: null
+    checkoutExpiresAt: null,
+    holdExtended: false,
+    cabins: [],
+    selectedCabinIndex: 0,
+    path: 'PAY_LATER',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    preferredChannel: 'EMAIL',
+    travelAdvisor: false,
+    notes: '',
+    marketing: false,
+    guests: [],
+    pngCollected: false,
+    tctCollected: false,
+    declarations: [],
+    promo: emptyPromo(),
+    serverQuote: null,
+    confirmation: null
   }
 }
 
@@ -42,7 +96,11 @@ function readStored(): BookingFlow | null {
 
     return {
       ...emptyFlow(),
-      ...parsed
+      ...parsed,
+      promo: parsed.promo ? { ...emptyPromo(), ...parsed.promo } : emptyPromo(),
+      cabins: Array.isArray(parsed.cabins) ? parsed.cabins : [],
+      guests: Array.isArray(parsed.guests) ? parsed.guests : [],
+      declarations: Array.isArray(parsed.declarations) ? parsed.declarations : []
     }
   } catch {
     return null
@@ -68,6 +126,38 @@ export function applySettingsDefaults(flow: BookingFlow, settings: EngineSetting
     fromMonth: flow.fromMonth || settings.calendar.default_search_from,
     toMonth: flow.toMonth || settings.calendar.default_search_to
   }
+}
+
+export function guestsFromCabins(cabins: Array<CabinSelection>, previous: Array<FlowGuest>): Array<FlowGuest> {
+  const leftover = [...previous]
+  const next: Array<FlowGuest> = []
+
+  for (const cabin of cabins) {
+    if (!cabin.cabinCode) {
+      continue
+    }
+
+    const slots: Array<boolean> = [
+      ...Array.from({ length: cabin.adults }, () => false),
+      ...Array.from({ length: cabin.children }, () => true)
+    ]
+
+    for (const isChild of slots) {
+      const reused = leftover.findIndex(guest =>
+        guest.cabinCode === cabin.cabinCode && guest.isChild === isChild
+      )
+      const prior = reused >= 0 ? leftover.splice(reused, 1)[0] : leftover.shift()
+
+      next.push({
+        cabinCode: cabin.cabinCode,
+        nationality: prior?.nationality ?? '',
+        ecuadorResident: prior?.ecuadorResident ?? false,
+        isChild
+      })
+    }
+  }
+
+  return next
 }
 
 export function useBookingFlow() {
