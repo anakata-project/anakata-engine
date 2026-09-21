@@ -4,7 +4,12 @@ export type {
   CheckoutPath,
   CheckoutStatus,
   CheckoutSubmitted,
+  CompleteBooking,
+  CompleteDeclaration,
+  CompleteGuest,
+  CompleteReservation,
   EngineCabin,
+  EngineCharterEnquiry,
   EngineCountry,
   EngineDeparture,
   EngineFeed,
@@ -14,6 +19,7 @@ export type {
   EngineQuote,
   EngineRates,
   EngineSettings,
+  EngineWaitlist,
   PriceChangedError,
   PromoCheck
 } from '#anakata-ui/app/types'

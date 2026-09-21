@@ -11,5 +11,6 @@ const { showHero, showCrumbs } = useFlowStep()
       <slot />
     </div>
     <ShellEngineFooter />
+    <ShellConsentBanner />
   </div>
 </template>

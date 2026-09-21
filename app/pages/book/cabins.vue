@@ -97,6 +97,14 @@ onMounted(() => {
   })
 })
 
+watch(() => hold.expired, (expired) => {
+  if (!expired || !itinerary.value) {
+    return
+  }
+
+  void navigateTo(`/itineraries/${itinerary.value.slug}`)
+})
+
 const problems = computed(() => {
   if (!settings.value) {
     return []
@@ -274,9 +282,15 @@ const counts = computed(() => {
           @children="(index, value) => { flow.cabins[index] = { ...flow.cabins[index]!, children: value } }"
         />
         <div
-          v-if="problems.length || checkout.cabinConflict"
+          v-if="hold.expired || problems.length || checkout.cabinConflict || checkout.submitError"
           class="cabwarn"
         >
+          <template v-if="hold.expired">
+            ⚠ {{ hold.releasedMessage }}<br>
+          </template>
+          <template v-if="checkout.submitError">
+            ⚠ {{ checkout.submitError }}<br>
+          </template>
           <template v-if="checkout.cabinConflict">
             ⚠ {{ checkout.cabinConflict.message }}
             <template v-if="checkout.cabinConflict.labels.length">

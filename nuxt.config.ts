@@ -1,6 +1,10 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+function isUiLayer(cwd: string): boolean {
+  return existsSync(resolve(cwd, 'app/types/engine.ts'))
+}
+
 const localUi = resolve(import.meta.dirname, '../anakata-ui')
 const uiLayer = existsSync(localUi)
   ? '../anakata-ui'
@@ -9,13 +13,11 @@ const uiLayer = existsSync(localUi)
 export default defineNuxtConfig({
   extends: [uiLayer],
 
-  alias: existsSync(localUi)
-    ? { '#anakata-ui': localUi }
-    : {},
-
   modules: [
     (_options, nuxt) => {
-      const layer = nuxt.options._layers.find(item => item.cwd.includes('anakata-ui'))
+      const layer = nuxt.options._layers.find(item =>
+        item.cwd !== nuxt.options.rootDir && isUiLayer(item.cwd)
+      )
       if (layer) {
         nuxt.options.alias['#anakata-ui'] = layer.cwd
       }
@@ -28,7 +30,20 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8000'
+      apiBase: 'http://localhost:8000',
+      gaMeasurementId: ''
+    }
+  },
+
+  alias: existsSync(localUi)
+    ? { '#anakata-ui': localUi }
+    : {},
+
+  routeRules: {
+    '/complete/**': {
+      headers: {
+        'cache-control': 'no-store, private'
+      }
     }
   },
 

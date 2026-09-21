@@ -6,6 +6,7 @@ import type {
   EngineQuote,
   PriceChangedError
 } from '../types/api'
+import { engineErrorMessage } from '../utils/engineError'
 import { onlineDepositForPath } from '../utils/pathQuote'
 
 export type CabinUnavailable = {
@@ -129,8 +130,8 @@ export function useCheckout() {
 
           return cabin
         })
-      } else if (payload.message || body.message) {
-        submitError.value = payload.message ?? body.message ?? ''
+      } else {
+        submitError.value = engineErrorMessage(error)
       }
 
       return false
@@ -215,7 +216,7 @@ export function useCheckout() {
         return 'error'
       }
 
-      submitError.value = payload.message ?? body.message ?? 'Request failed.'
+      submitError.value = engineErrorMessage(error)
 
       return 'error'
     } finally {
