@@ -1,0 +1,8 @@
+# Build settings belong here, not in the Netlify UI — this file wins.
+[build]
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_FLAGS = "--shamefully-hoist"

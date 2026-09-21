@@ -6,7 +6,7 @@ Public booking engine for Anakata. Nuxt 4 with **SSR** on port **3000**. Extends
 |---|---|
 | Port | **3000** |
 | Render | SSR |
-| Layer | `extends: ['../anakata-ui']` (`v0.9.0`) |
+| Layer | local `../anakata-ui`; Netlify `github:anakata-project/anakata-ui#v0.9.0` |
 | API | `NUXT_PUBLIC_API_BASE` (default `http://localhost:8000`) |
 
 The API must already allow this origin. CORS is configured on the API via `FRONTEND_ENGINE_URL=http://localhost:3000`.
@@ -37,6 +37,12 @@ pnpm dev
 Open `http://localhost:3000`.
 
 Placeholder routes (flow built in Sprint 8): `/`, `/itineraries`, `/itineraries/[slug]`, `/book/cabins`, `/book/details`, `/book/confirmation`, `/charter`.
+
+## Deploy (Netlify)
+
+`netlify.toml` owns the build command (`pnpm build`) and publish directory (`dist`). Do not set those in the Netlify UI. Set `NUXT_PUBLIC_API_BASE` in the site env.
+
+The API must allow this origin: `FRONTEND_ENGINE_URL`, plus the host in `SANCTUM_STATEFUL_DOMAINS`.
 
 ## Quality
 
