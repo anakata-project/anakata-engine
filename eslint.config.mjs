@@ -18,7 +18,7 @@ export default withNuxt(
     rules: {
       'better-tailwindcss/no-unknown-classes': ['error', {
         ignore: [
-          '^(engine|topbar|brand|brand-mark--dark|brand-mark--light|topnav|on|lang|wrap|stage|heroband|sky|coords|disp|sub|crumbs|crumb|cur|done|engine-footer|prowmark|api-status|api-status--ok|api-status--down|placeholder-copy|engine-placeholder|engine-placeholder__header|engine-placeholder__title|engine-placeholder__body|btn|cta|o|lb|ico|mono)$'
+          '^(engine|topbar|brand|brand-mark--dark|brand-mark--light|topnav|on|lang|wrap|stage|heroband|sky|coords|disp|sub|crumbs|crumb|cur|done|engine-footer|prowmark|api-status|api-status--ok|api-status--down|placeholder-copy|engine-placeholder|engine-placeholder__header|engine-placeholder__title|engine-placeholder__body|btn|cta|o|lb|ico|mono|klabel|bbnote|bookwrap|bookbar|bb|open|pop|yr|mgrid|mn|dis|sel|inrange|hint|gpop|grow|gl|stepper|n|itins|itin|img|grad|tag|tagline|bd|chips|chip|dealbar|foot|price|f|v|depsList|dlInner|overview|depRow|full|deal-on|d|y|st-av|st-ur|st-fu|dep-actions|pr|deal|was|nowpr|waitlist-mask|waitlist-stub|detgrid|dt-head|badges|badge|hl|hero|tagg|facts|fact|fl|fv|desc|tabs|tab|tabbody|hlrow|spaced|dt-actions|dth|dtable|dhead|drow|selrow|dd|outside|dy|dcta|rail|railbox|from|amt|tick|railsel|rail-cta|railnote|route-map|eyebrow|days|railfoot|mapwrap|map|card|cday|sites|tags|w|dayrow|active|val|act)$'
         ]
       }]
     }
