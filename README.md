@@ -6,7 +6,7 @@ Public booking engine for Anakata. Nuxt 4 with **SSR** on port **3000**. Extends
 |---|---|
 | Port | **3000** |
 | Render | SSR |
-| Layer | `extends: ['../anakata-ui']` (`v0.7.1`) |
+| Layer | `extends: ['../anakata-ui']` (`v0.8.1`) |
 | API | `NUXT_PUBLIC_API_BASE` (default `http://localhost:8000`) |
 
 The API must already allow this origin. CORS is configured on the API via `FRONTEND_ENGINE_URL=http://localhost:3000`.
