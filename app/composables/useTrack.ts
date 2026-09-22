@@ -1,5 +1,7 @@
+import type { EngineEventParams } from '../types/api'
 import type { AnalyticsConsent } from '../utils/analyticsConsent'
 import { analyticsAllowed } from '../utils/analyticsConsent'
+import { discardEngineQueue, enqueueEngineEvent } from '../utils/engineQueue'
 
 export type TrackParams = Record<string, string | number | boolean | undefined>
 
@@ -18,6 +20,13 @@ export function resetTrackForTests(): void {
   consent = 'unset'
   measurementId = ''
   gtagLoaded = false
+  discardEngineQueue()
+}
+
+/** Another tab refused. Drop this tab's in-memory queue and stop GA4. */
+export function revokeTracking(): void {
+  consent = 'refused'
+  discardEngineQueue()
 }
 
 export function loadGtag(id: string, doc?: Document): void {
@@ -47,7 +56,16 @@ export function loadGtag(id: string, doc?: Document): void {
   gtagLoaded = true
 }
 
-export function track(event: string, params?: TrackParams): void {
+export function track(event: string, params?: TrackParams, crm?: EngineEventParams): void {
+  sendGa4(event, params)
+  enqueueEngineEvent(event, crm)
+}
+
+export function trackingConsent(): AnalyticsConsent {
+  return consent
+}
+
+function sendGa4(event: string, params?: TrackParams): void {
   if (!analyticsAllowed(consent, measurementId)) {
     return
   }

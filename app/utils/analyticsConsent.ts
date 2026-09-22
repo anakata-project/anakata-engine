@@ -6,6 +6,16 @@ export function analyticsAllowed(consent: AnalyticsConsent, measurementId: strin
   return consent === 'accepted' && measurementId.trim() !== ''
 }
 
+/** The banner is the shared choice. A missing GA measurement id does not hide it. */
+export function showConsentBanner(consent: AnalyticsConsent): boolean {
+  return consent === 'unset'
+}
+
+/** A refusal in another tab arrives as a storage event. Accepted does not revoke. */
+export function remoteConsentRevoked(newValue: string | null): boolean {
+  return newValue !== 'accepted'
+}
+
 export function readStoredConsent(storage?: Pick<Storage, 'getItem'>): AnalyticsConsent {
   if (!storage) {
     return 'unset'

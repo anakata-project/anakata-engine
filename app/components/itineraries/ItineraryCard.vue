@@ -67,6 +67,8 @@ function toggle(): void {
     track('view_itinerary', {
       itinerary_name: props.itinerary.name,
       duration_nights: props.itinerary.nights
+    }, {
+      itinerary_code: props.itinerary.code
     })
   }
 }

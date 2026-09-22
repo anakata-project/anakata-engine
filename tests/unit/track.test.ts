@@ -1,11 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { analyticsAllowed, readStoredConsent } from '../../app/utils/analyticsConsent'
+import { analyticsAllowed, readStoredConsent, remoteConsentRevoked, showConsentBanner } from '../../app/utils/analyticsConsent'
 import { configureTrack, resetTrackForTests, track } from '../../app/composables/useTrack'
 
 describe('consent gating of track', () => {
   afterEach(() => {
     resetTrackForTests()
     vi.unstubAllGlobals()
+  })
+
+  it('shows the banner whenever the choice is unset', () => {
+    expect(showConsentBanner('unset')).toBe(true)
+    expect(showConsentBanner('accepted')).toBe(false)
+    expect(showConsentBanner('refused')).toBe(false)
+    expect(remoteConsentRevoked('refused')).toBe(true)
+    expect(remoteConsentRevoked(null)).toBe(true)
+    expect(remoteConsentRevoked('accepted')).toBe(false)
   })
 
   it('is off without consent or without a measurement id', () => {

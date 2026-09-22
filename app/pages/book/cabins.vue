@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EngineCabin, EngineDeparture } from '../../types/api'
+import type { EngineCabin, EngineDeparture, EngineEventParams } from '../../types/api'
 import { cabProblems } from '../../utils/cabProblems'
 import { cabinCountRange, distributeGuests } from '../../utils/distributeGuests'
 import { formatIsoDate, suitePpDouble } from '../../utils/engineFlow'
@@ -68,11 +68,23 @@ onMounted(() => {
     )
   }
 
+  const checkoutEvent: EngineEventParams = {
+    cabin_count: flow.value.cabins.length
+  }
+
+  if (itinerary.value?.code) {
+    checkoutEvent.itinerary_code = itinerary.value.code
+  }
+
+  if (departure.value?.id) {
+    checkoutEvent.departure_id = departure.value.id
+  }
+
   track('begin_checkout', {
     itinerary_name: itinerary.value?.name ?? '',
     value: 0,
     currency: 'USD'
-  })
+  }, checkoutEvent)
 
   void hold.extendIfDue()
 

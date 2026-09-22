@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EngineCountry, EngineDeparture, PromoCheck } from '../../types/api'
+import type { EngineCountry, EngineDeparture, EngineEventParams, PromoCheck } from '../../types/api'
 import { guestsFromCabins } from '../../composables/useBookingFlow'
 import { formatIsoDate } from '../../utils/engineFlow'
 import { onlineDepositForPath, requiredDeclarations } from '../../utils/pathQuote'
@@ -91,7 +91,7 @@ onMounted(() => {
     const coupon = flow.value.promo.code
     flow.value.promo = removePromoForReason(t('details.promoFestiveRemoved'))
     promoInput.value = ''
-    track('remove_promotion', { coupon })
+    track('remove_promotion', { coupon }, { coupon_code: coupon })
   }
 
   if (!trackedEnter) {
@@ -101,7 +101,7 @@ onMounted(() => {
       num_cabins: flow.value.cabins.length,
       value: flow.value.serverQuote?.total ?? estimate.value?.invoiceTotal ?? 0,
       currency: 'USD'
-    })
+    }, crmTrip())
   }
 
   void checkout.quote()
@@ -114,6 +114,7 @@ onMounted(() => {
 
   function onHide(): void {
     if (document.visibilityState === 'hidden' || document.visibilityState === undefined) {
+      // Synchronous, before the analytics plugin flushes on a microtask.
       fireAbandon()
       hold.releaseBeacon()
     }
@@ -129,6 +130,23 @@ onMounted(() => {
   })
 })
 
+function crmTrip(extra: EngineEventParams = {}): EngineEventParams {
+  const params: EngineEventParams = {
+    cabin_count: flow.value.cabins.length,
+    ...extra
+  }
+
+  if (itinerary.value?.code) {
+    params.itinerary_code = itinerary.value.code
+  }
+
+  if (departure.value?.id) {
+    params.departure_id = departure.value.id
+  }
+
+  return params
+}
+
 function fireAbandon(): void {
   if (abandoned.value) {
     return
@@ -138,18 +156,20 @@ function fireAbandon(): void {
   track('abandon_cart', {
     last_step_reached: 'details',
     itinerary_name: itinerary.value?.name ?? ''
-  })
+  }, crmTrip({ step: 'details' }))
 }
 
 function selectPath(path: 'PAY_LATER' | 'PAY_DEPOSIT'): void {
   checkout.setPath(path)
-  track('select_payment_path', { payment_path: path === 'PAY_DEPOSIT' ? 'online' : 'later' })
+  track('select_payment_path', { payment_path: path === 'PAY_DEPOSIT' ? 'online' : 'later' }, { path })
   void checkout.quote()
 }
 
 async function applyPromo(): Promise<void> {
   if (flow.value.promo.phase === 'applied') {
-    track('remove_promotion', { coupon: flow.value.promo.code ?? '' })
+    track('remove_promotion', { coupon: flow.value.promo.code ?? '' }, {
+      coupon_code: flow.value.promo.code ?? ''
+    })
     flow.value.promo = applyPromoResult(flow.value.promo, '', false, null, null)
     promoInput.value = ''
     await checkout.quote()
@@ -179,7 +199,7 @@ async function applyPromo(): Promise<void> {
   }) as PromoCheck
 
   if (!result.valid) {
-    track('promo_invalid', { coupon: code })
+    track('promo_invalid', { coupon: code }, { coupon_code: code })
     flow.value.promo = applyPromoResult(flow.value.promo, code, false, result.reason, null)
     await checkout.quote()
 
@@ -193,7 +213,9 @@ async function applyPromo(): Promise<void> {
     null,
     result.line ? `${result.line} applied` : code
   )
-  track('apply_promotion', { coupon: code, itinerary_name: itinerary.value?.name ?? '' })
+  track('apply_promotion', { coupon: code, itinerary_name: itinerary.value?.name ?? '' }, {
+    coupon_code: code
+  })
   await checkout.quote()
 }
 
@@ -227,7 +249,9 @@ async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
 
   if (!validForm()) {
     formError.value = t('details.formError')
-    track('booking_form_invalid', { payment_path: path === 'PAY_DEPOSIT' ? 'online' : 'later' })
+    track('booking_form_invalid', { payment_path: path === 'PAY_DEPOSIT' ? 'online' : 'later' }, {
+      step: 'details'
+    })
     await nextTick()
     const first = document.querySelector<HTMLInputElement>('.field.bad input, .field.bad select')
     first?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -242,6 +266,13 @@ async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
     await checkout.quote()
   }
 
+  const total = flow.value.serverQuote?.total
+  const crm = crmTrip({ path, currency: 'USD' })
+
+  if (typeof total === 'number' && Number.isInteger(total)) {
+    crm.value = total
+  }
+
   track('submit_booking_request', {
     itinerary_name: itinerary.value?.name ?? '',
     departure: departure.value ? formatIsoDate(departure.value.embark) : '',
@@ -254,7 +285,7 @@ async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
     coupon: flow.value.promo.code ?? undefined,
     payment_path: path === 'PAY_DEPOSIT' ? 'online' : 'later',
     deposit_paid_online: path === 'PAY_DEPOSIT'
-  })
+  }, crm)
 
   const result = await checkout.submit()
 

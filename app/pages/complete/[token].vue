@@ -3,6 +3,7 @@ import type { CompleteReservation } from '../../types/api'
 import { completePayReady, declarationControl } from '../../utils/completeState'
 import { engineErrorMessage, engineErrorStatus, fieldErrors } from '../../utils/engineError'
 import { formatIsoDate } from '../../utils/engineFlow'
+import { submitSessionId } from '../../utils/engineSession'
 
 const { t } = useI18n()
 const { format } = useMoney()
@@ -72,6 +73,12 @@ const lockedDeclarations = computed(() =>
   (data.value?.declarations ?? []).filter(row => declarationControl(row).kind === 'locked')
 )
 
+function sessionField(): { session_id?: string } {
+  const sessionId = submitSessionId()
+
+  return sessionId ? { session_id: sessionId } : {}
+}
+
 function applyPage(next: CompleteReservation): void {
   data.value = next
 }
@@ -88,7 +95,8 @@ async function saveBilling(): Promise<void> {
         billing_name: billingName.value.trim() || null,
         billing_address: billingAddress.value.trim() || null,
         billing_email: billingEmail.value.trim() || null,
-        billing_phone: billingPhone.value.trim() || null
+        billing_phone: billingPhone.value.trim() || null,
+        ...sessionField()
       }
     }) as CompleteReservation
     applyPage(next)
@@ -125,7 +133,7 @@ async function saveDeclarations(): Promise<void> {
   try {
     const next = await request(`/api/engine/complete/${token.value}/declarations`, {
       method: 'POST',
-      body: { documents }
+      body: { documents, ...sessionField() }
     }) as CompleteReservation
     applyPage(next)
     ticked.value = []
@@ -144,7 +152,7 @@ async function saveGuest(guestId: number, body: Record<string, unknown>): Promis
   try {
     const next = await request(`/api/engine/complete/${token.value}/guests/${guestId}`, {
       method: 'PUT',
-      body
+      body: { ...body, ...sessionField() }
     }) as CompleteReservation
     applyPage(next)
     await refresh()

@@ -125,10 +125,23 @@ onMounted(() => {
     track('view_itinerary_detail', {
       itinerary_name: itinerary.value.name,
       departure: selected.value.embark
+    }, {
+      itinerary_code: itinerary.value.code
     })
   }
   watchReveals()
 })
+
+watch(() => selected.value?.id, (id) => {
+  if (!id || !itinerary.value) {
+    return
+  }
+
+  track('view_departure', undefined, {
+    itinerary_code: itinerary.value.code,
+    departure_id: id
+  })
+}, { immediate: true })
 
 function onSelect(dep: EngineDeparture): void {
   flow.value.departureId = dep.id
@@ -137,6 +150,9 @@ function onSelect(dep: EngineDeparture): void {
     itinerary_name: itinerary.value?.name ?? dep.itinerary,
     departure: dep.embark,
     yacht: dep.yacht
+  }, {
+    itinerary_code: dep.itinerary,
+    departure_id: dep.id
   })
 }
 
@@ -296,6 +312,7 @@ function continueToCabins(): void {
             <TripRouteMap
               :data="mapData"
               :itinerary-name="itinerary.name"
+              :itinerary-code="itinerary.code"
             />
           </ClientOnly>
         </div>

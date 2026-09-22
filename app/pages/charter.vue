@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { EngineDeparture } from '../types/api'
+import type { EngineDeparture, EngineEventParams } from '../types/api'
 import { charterGuestsOk, charterMessage } from '../utils/charterGuests'
 import { engineErrorMessage, fieldErrors } from '../utils/engineError'
 import { formatIsoDate, formatUsd } from '../utils/engineFlow'
+import { submitSessionId } from '../utils/engineSession'
 
 const { t } = useI18n()
 const { request } = useApi()
@@ -108,10 +109,32 @@ async function submit(): Promise<void> {
       body.preferred_to = preferredTo.value
     }
 
+    const sessionId = submitSessionId()
+
+    if (sessionId) {
+      body.session_id = sessionId
+    }
+
     await request('/api/engine/charter-enquiries', {
       method: 'POST',
       body
     })
+
+    const crm: EngineEventParams = {}
+    const chosen = departures.value.find(item => item.id === departureId.value)
+
+    if (mode.value === 'departure' && departureId.value !== null) {
+      crm.departure_id = departureId.value
+
+      if (chosen) {
+        crm.itinerary_code = chosen.itinerary
+      }
+    }
+
+    if (Number.isInteger(weekRate.value)) {
+      crm.value = weekRate.value
+      crm.currency = 'USD'
+    }
 
     track('charter_inquiry_submit', {
       num_passengers: guests.value,
@@ -121,7 +144,7 @@ async function submit(): Promise<void> {
       departure_id: mode.value === 'departure' && departureId.value !== null
         ? departureId.value
         : undefined
-    })
+    }, crm)
     done.value = true
   } catch (caught) {
     const fields = fieldErrors(caught)

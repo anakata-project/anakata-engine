@@ -1,4 +1,6 @@
 export type {
+  AttributionInput,
+  AttributionTouch,
   CheckoutCreated,
   CheckoutExtended,
   CheckoutPath,
@@ -12,6 +14,9 @@ export type {
   EngineCharterEnquiry,
   EngineCountry,
   EngineDeparture,
+  EngineEventName,
+  EngineEventParams,
+  EngineEventsInput,
   EngineFeed,
   EngineItinerary,
   EngineOffer,

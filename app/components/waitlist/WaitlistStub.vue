@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { engineErrorMessage, fieldErrors } from '../../utils/engineError'
 import { formatIsoDate } from '../../utils/engineFlow'
+import { submitSessionId } from '../../utils/engineSession'
 
 const { t } = useI18n()
 const { request } = useApi()
@@ -52,6 +53,8 @@ async function submit(): Promise<void> {
   formError.value = ''
 
   try {
+    const sessionId = submitSessionId()
+
     await request('/api/engine/waitlist', {
       method: 'POST',
       body: {
@@ -63,7 +66,8 @@ async function submit(): Promise<void> {
         },
         adults: adults.value,
         children: children.value,
-        notes: notes.value.trim() || null
+        notes: notes.value.trim() || null,
+        ...(sessionId ? { session_id: sessionId } : {})
       }
     })
     done.value = true

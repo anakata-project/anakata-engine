@@ -4,6 +4,7 @@ import type { RouteMapData } from '../../data/routeMaps/west'
 const props = defineProps<{
   data: RouteMapData
   itineraryName: string
+  itineraryCode: string
 }>()
 
 const { t } = useI18n()
@@ -20,7 +21,9 @@ const activeDay = ref(-1)
 let cleanup: Array<() => void> = []
 
 onMounted(async () => {
-  track('view_route_map', { itinerary_name: props.itineraryName })
+  track('view_route_map', { itinerary_name: props.itineraryName }, {
+    itinerary_code: props.itineraryCode
+  })
 
   const d3 = await import('d3')
   const wrap = mapwrap.value

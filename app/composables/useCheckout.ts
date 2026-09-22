@@ -6,7 +6,10 @@ import type {
   EngineQuote,
   PriceChangedError
 } from '../types/api'
+import { readStoredConsent } from '../utils/analyticsConsent'
+import { attributionForCheckout } from '../utils/attribution'
 import { engineErrorMessage } from '../utils/engineError'
+import { currentSessionId } from '../utils/engineSession'
 import { onlineDepositForPath } from '../utils/pathQuote'
 
 export type CabinUnavailable = {
@@ -151,6 +154,11 @@ export function useCheckout() {
     submitError.value = ''
 
     try {
+      const consented = import.meta.client && readStoredConsent(localStorage) === 'accepted'
+      const sessionId = consented && import.meta.client ? currentSessionId(localStorage) : null
+      const attribution = import.meta.client
+        ? attributionForCheckout(consented, sessionStorage, localStorage)
+        : null
       const result = await engineFetch<CheckoutSubmitted>(`/api/engine/checkout/${token}/submit`, {
         method: 'POST',
         body: {
@@ -172,7 +180,9 @@ export function useCheckout() {
             cabin_code: guest.cabinCode,
             nationality: guest.nationality,
             ecuador_resident: guest.ecuadorResident
-          }))
+          })),
+          ...(sessionId ? { session_id: sessionId } : {}),
+          ...(attribution ? { attribution } : {})
         }
       }) as CheckoutSubmitted
 

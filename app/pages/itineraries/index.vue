@@ -47,6 +47,9 @@ function onSelect(dep: EngineDeparture): void {
     itinerary_name: itin?.name ?? dep.itinerary,
     departure: dep.embark,
     yacht: dep.yacht
+  }, {
+    itinerary_code: dep.itinerary,
+    departure_id: dep.id
   })
   void navigateTo(`/itineraries/${itin?.slug ?? dep.itinerary.toLowerCase()}`)
 }
