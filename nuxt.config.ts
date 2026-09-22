@@ -44,6 +44,16 @@ export default defineNuxtConfig({
       headers: {
         'cache-control': 'no-store, private'
       }
+    },
+    '/questionnaire/**': {
+      headers: {
+        'cache-control': 'no-store, private'
+      }
+    },
+    '/survey/**': {
+      headers: {
+        'cache-control': 'no-store, private'
+      }
     }
   },
 

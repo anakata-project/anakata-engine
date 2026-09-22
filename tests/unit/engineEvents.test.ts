@@ -56,4 +56,13 @@ describe('engine event payloads', () => {
       page_path: '/complete/secret-token?utm_source=meta'
     })?.params.page_path).toBe('/complete/[token]')
   })
+
+  it('redacts questionnaire and survey paths and strips the query', () => {
+    expect(buildEngineEvent('page_view', {
+      page_path: '/questionnaire/secret-token?utm_source=mail'
+    })?.params.page_path).toBe('/questionnaire/[token]')
+    expect(buildEngineEvent('page_view', {
+      page_path: '/survey/secret-token?utm_source=mail'
+    })?.params.page_path).toBe('/survey/[token]')
+  })
 })

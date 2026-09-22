@@ -26,5 +26,10 @@ export type {
   EngineSettings,
   EngineWaitlist,
   PriceChangedError,
-  PromoCheck
+  PromoCheck,
+  QuestionnaireAnswersInput,
+  QuestionnaireView,
+  SurveyInput,
+  SurveyQuestion,
+  SurveyView
 } from '#anakata-ui/app/types'

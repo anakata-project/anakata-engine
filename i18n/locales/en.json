@@ -315,5 +315,21 @@
     "expiredTitle": "Your request is safe",
     "expiredLead": "The online payment was not completed in time. Your request stays with the team, who will contact you.",
     "return": "Return to the site"
+  },
+  "questionnaire": {
+    "k": "Before the expedition",
+    "title": "Questionnaire",
+    "save": "Save",
+    "saved": "Saved",
+    "restricted": "Seen only by the operations team",
+    "replace": "Provided — enter again to replace",
+    "guest": "{name} · {cabin}"
+  },
+  "survey": {
+    "k": "After the expedition",
+    "title": "Survey",
+    "send": "Send",
+    "received": "Thank you — received",
+    "guest": "{name}"
   }
 }

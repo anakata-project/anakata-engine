@@ -2292,6 +2292,35 @@ html:not(.dark) .bookwrap {
   max-width: 820px;
 }
 
+.scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scale-row button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--hair);
+  background: transparent;
+  color: var(--ivory);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.scale-row button.on {
+  border-color: var(--sand);
+  color: var(--sand);
+}
+
+.field .hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--iv62);
+}
+
 .duebox {
   border: 1px solid var(--hair);
   padding: 16px 18px;

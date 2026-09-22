@@ -1,5 +1,7 @@
-/** Mirrors App\Support\Engine\PagePath. The complete-page token never leaves the browser. */
+/** Mirrors App\Support\Engine\PagePath. Token pages never leave the browser. */
 export const COMPLETE_STORED = '/complete/[token]'
+export const QUESTIONNAIRE_STORED = '/questionnaire/[token]'
+export const SURVEY_STORED = '/survey/[token]'
 
 export function redactPagePath(path: string): string | null {
   const trimmed = path.trim()
@@ -17,6 +19,14 @@ export function redactPagePath(path: string): string | null {
 
   if (withoutHash.startsWith('/complete/')) {
     return COMPLETE_STORED
+  }
+
+  if (withoutHash.startsWith('/questionnaire/')) {
+    return QUESTIONNAIRE_STORED
+  }
+
+  if (withoutHash.startsWith('/survey/')) {
+    return SURVEY_STORED
   }
 
   if (withoutHash.length > 200) {
