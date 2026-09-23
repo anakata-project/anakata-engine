@@ -8,7 +8,7 @@ function isUiLayer(cwd: string): boolean {
 const localUi = resolve(import.meta.dirname, '../anakata-ui')
 const uiLayer = existsSync(localUi)
   ? '../anakata-ui'
-  : 'github:anakata-project/anakata-ui#v0.12.1'
+  : 'github:anakata-project/anakata-ui#v0.13.0'
 
 export default defineNuxtConfig({
   extends: [uiLayer],
@@ -51,6 +51,11 @@ export default defineNuxtConfig({
       }
     },
     '/survey/**': {
+      headers: {
+        'cache-control': 'no-store, private'
+      }
+    },
+    '/charter-proposal/**': {
       headers: {
         'cache-control': 'no-store, private'
       }
