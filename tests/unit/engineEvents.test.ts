@@ -64,5 +64,8 @@ describe('engine event payloads', () => {
     expect(buildEngineEvent('page_view', {
       page_path: '/survey/secret-token?utm_source=mail'
     })?.params.page_path).toBe('/survey/[token]')
+    expect(buildEngineEvent('page_view', {
+      page_path: '/unsubscribe/secret-token?utm_source=mail'
+    })?.params.page_path).toBe('/unsubscribe/[token]')
   })
 })

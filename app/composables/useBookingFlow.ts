@@ -39,6 +39,7 @@ export type BookingFlow = {
   travelAdvisor: boolean
   notes: string
   marketing: boolean
+  cartMarketing: boolean
   guests: Array<FlowGuest>
   pngCollected: boolean
   tctCollected: boolean
@@ -70,6 +71,7 @@ export function emptyFlow(): BookingFlow {
     travelAdvisor: false,
     notes: '',
     marketing: false,
+    cartMarketing: false,
     guests: [],
     pngCollected: false,
     tctCollected: false,

@@ -1,7 +1,7 @@
 import type { EngineEventParams, EngineEventsInput } from '../types/api'
 import { buildEngineEvent } from './engineEvents'
 import { createSessionId, ensureSession, touchSession } from './engineSession'
-import { redactPagePath } from './pagePath'
+import { UNSUBSCRIBE_STORED, redactPagePath } from './pagePath'
 
 export const FLUSH_MS = 5000
 export const BATCH_MAX = 25
@@ -106,7 +106,7 @@ export function enqueueEngineEvent(name: string, params?: EngineEventParams): vo
 export function queuePageView(path: string): void {
   const pagePath = redactPagePath(path)
 
-  if (!pagePath) {
+  if (!pagePath || pagePath === UNSUBSCRIBE_STORED) {
     return
   }
 

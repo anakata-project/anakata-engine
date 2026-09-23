@@ -2,12 +2,19 @@
 import type { EngineCountry, EngineDeparture, EngineEventParams, PromoCheck } from '../../types/api'
 import { guestsFromCabins } from '../../composables/useBookingFlow'
 import { formatIsoDate } from '../../utils/engineFlow'
+import { submitSessionId } from '../../utils/engineSession'
+import {
+  MARKETING_LEAD_POSTED_KEY,
+  checkoutMarketingVersion,
+  marketingLeadBody
+} from '../../utils/marketingLead'
 import { onlineDepositForPath, requiredDeclarations } from '../../utils/pathQuote'
 import { estimatePrice } from '../../utils/priceEstimate'
 import { applyPromoResult, removePromoForReason } from '../../utils/promoState'
 
 const { t } = useI18n()
 const route = useRoute()
+const config = useRuntimeConfig()
 const { request } = useApi()
 const { format } = useMoney()
 const { data: feed } = useEngineFeed()
@@ -115,6 +122,7 @@ onMounted(() => {
   function onHide(): void {
     if (document.visibilityState === 'hidden' || document.visibilityState === undefined) {
       // Synchronous, before the analytics plugin flushes on a microtask.
+      void captureMarketingLead()
       fireAbandon()
       hold.releaseBeacon()
     }
@@ -145,6 +153,68 @@ function crmTrip(extra: EngineEventParams = {}): EngineEventParams {
   }
 
   return params
+}
+
+let leadInFlight = false
+
+function leadAlreadyPosted(): boolean {
+  if (!import.meta.client) {
+    return false
+  }
+
+  return sessionStorage.getItem(MARKETING_LEAD_POSTED_KEY) === '1'
+}
+
+async function captureMarketingLead(): Promise<void> {
+  if (!import.meta.client || leadInFlight) {
+    return
+  }
+
+  const body = marketingLeadBody({
+    ticked: flow.value.cartMarketing,
+    email: flow.value.email,
+    firstName: flow.value.firstName,
+    version: checkoutMarketingVersion(settings.value?.legal.consent_versions),
+    posted: leadAlreadyPosted(),
+    sessionId: submitSessionId()
+  })
+
+  if (!body) {
+    return
+  }
+
+  leadInFlight = true
+
+  try {
+    const response = await fetch(`${String(config.public.apiBase).replace(/\/$/, '')}/api/engine/marketing-leads`, {
+      method: 'POST',
+      keepalive: true,
+      credentials: 'include',
+      headers: {
+        'accept': 'application/json',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+
+    if (!response.ok) {
+      leadInFlight = false
+
+      return
+    }
+
+    const json = await response.json() as { accepted?: boolean }
+
+    if (json.accepted === true) {
+      sessionStorage.setItem(MARKETING_LEAD_POSTED_KEY, '1')
+
+      return
+    }
+
+    leadInFlight = false
+  } catch {
+    leadInFlight = false
+  }
 }
 
 function fireAbandon(): void {
@@ -313,6 +383,7 @@ async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
   }
 
   hold.retain()
+  await captureMarketingLead()
 
   if (result.path === 'PAY_DEPOSIT' && result.checkout_url) {
     window.location.assign(result.checkout_url)
@@ -324,6 +395,7 @@ async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
 }
 
 async function back(): Promise<void> {
+  await captureMarketingLead()
   await hold.release()
   await navigateTo('/book/cabins')
 }
@@ -428,6 +500,13 @@ const declarationItems = computed(() => {
               <div class="err">
                 {{ t('details.emailErr') }}
               </div>
+              <label class="chkrow">
+                <input
+                  v-model="flow.cartMarketing"
+                  type="checkbox"
+                >
+                <span>{{ t('details.checkoutMarketing') }}</span>
+              </label>
             </div>
             <div
               class="field"

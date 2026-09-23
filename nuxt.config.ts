@@ -59,6 +59,11 @@ export default defineNuxtConfig({
       headers: {
         'cache-control': 'no-store, private'
       }
+    },
+    '/unsubscribe/**': {
+      headers: {
+        'cache-control': 'no-store, private'
+      }
     }
   },
 

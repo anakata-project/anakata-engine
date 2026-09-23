@@ -9,5 +9,7 @@ describe('page path redaction', () => {
     expect(redactPagePath('/survey/secret-token?utm_source=mail#thanks')).toBe('/survey/[token]')
     expect(redactPagePath('/charter-proposal/secret-token')).toBe('/charter-proposal/[token]')
     expect(redactPagePath('/charter-proposal/secret-token?utm_source=mail#thanks')).toBe('/charter-proposal/[token]')
+    expect(redactPagePath('/unsubscribe/secret-token')).toBe('/unsubscribe/[token]')
+    expect(redactPagePath('/unsubscribe/secret-token?utm_source=mail#thanks')).toBe('/unsubscribe/[token]')
   })
 })

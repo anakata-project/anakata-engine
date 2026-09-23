@@ -2,6 +2,7 @@ import type { AnalyticsConsent } from '../utils/analyticsConsent'
 import { analyticsAllowed, readStoredConsent, showConsentBanner, writeStoredConsent } from '../utils/analyticsConsent'
 import { clearPersistedTouches, promoteSessionTouch } from '../utils/attribution'
 import { clearSession, ensureSession } from '../utils/engineSession'
+import { UNSUBSCRIBE_STORED, redactPagePath } from '../utils/pagePath'
 import { bindSessionStore, configureEngineQueue, queuePageView, setEngineConsent } from '../utils/engineQueue'
 import { configureTrack, loadGtag, revokeTracking } from './useTrack'
 
@@ -44,10 +45,28 @@ export function useAnalyticsConsent() {
       setEngineConsent(false, null)
     }
 
-    if (analyticsAllowed(next, measurementId.value)) {
+    if (mayLoadTracker() && analyticsAllowed(next, measurementId.value)) {
       loadGtag(measurementId.value, document)
     }
   }
+
+  function mayLoadTracker(): boolean {
+    return redactPagePath(route.path) !== UNSUBSCRIBE_STORED
+  }
+
+  function loadTrackerIfAllowed(): void {
+    if (!import.meta.client || !mayLoadTracker()) {
+      return
+    }
+
+    if (analyticsAllowed(consent.value, measurementId.value)) {
+      loadGtag(measurementId.value, document)
+    }
+  }
+
+  watch(() => route.path, () => {
+    loadTrackerIfAllowed()
+  })
 
   function accept(): void {
     writeStoredConsent('accepted', import.meta.client ? localStorage : undefined)

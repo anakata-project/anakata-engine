@@ -34,5 +34,7 @@ export type {
   QuestionnaireView,
   SurveyInput,
   SurveyQuestion,
-  SurveyView
+  SurveyView,
+  MarketingLeadInput,
+  UnsubscribeView
 } from '#anakata-ui/app/types'

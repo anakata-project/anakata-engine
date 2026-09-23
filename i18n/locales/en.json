@@ -254,6 +254,7 @@
     "notes": "Additional notes (optional)",
     "notesPh": "Celebrations, questions, special requirements…",
     "marketing": "I'd like to receive news and expedition ideas from Anakata (optional)",
+    "checkoutMarketing": "Anakata may email you news and expedition ideas. You can stop these at any time from the link in those emails. Unticking this box does not withdraw a request already sent. Wording is pending (LEG-002).",
     "guests": "Guests",
     "nationality": "Guest {n} · {cabin} · nationality",
     "chooseCountry": "Choose a country",
@@ -331,6 +332,15 @@
     "send": "Send",
     "received": "Thank you — received",
     "guest": "{name}"
+  },
+  "unsubscribe": {
+    "k": "Email",
+    "title": "Unsubscribe",
+    "prompt": "Stop marketing email from Anakata.",
+    "button": "Unsubscribe",
+    "confirmed": "You will no longer receive marketing email from Anakata.",
+    "transactional": "Messages about an existing booking still arrive.",
+    "unknown": "This link is not valid."
   },
   "charterProposal": {
     "k": "Charter proposal",

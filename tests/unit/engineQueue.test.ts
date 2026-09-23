@@ -48,10 +48,12 @@ describe('engine event queue', () => {
     queuePageView('/complete/secret')
     queuePageView('/questionnaire/secret?utm_source=mail')
     queuePageView('/survey/secret?utm_source=mail')
+    queuePageView('/unsubscribe/secret-token?utm_source=mail')
 
     const pending = pendingEngineEvents()
 
     expect(pending.map(event => event.name)).toEqual(['page_view', 'page_view', 'page_view', 'page_view'])
+    expect(JSON.stringify(pending)).not.toContain('secret-token')
     expect(pending[0]?.params.page_path).toBe('/itineraries')
     expect(pending[1]?.params.page_path).toBe('/complete/[token]')
     expect(pending[2]?.params.page_path).toBe('/questionnaire/[token]')
