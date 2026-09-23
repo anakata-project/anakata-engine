@@ -331,5 +331,27 @@
     "send": "Send",
     "received": "Thank you — received",
     "guest": "{name}"
+  },
+  "charterProposal": {
+    "k": "Charter proposal",
+    "title": "Your charter proposal",
+    "version": "Version {version}",
+    "validUntil": "Valid until {date}",
+    "price": "Price",
+    "deposit": "Deposit",
+    "total": "Total",
+    "name": "Full name",
+    "terms": "I accept the terms and the cancellation policy in this proposal.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "reason": "Reason (optional)",
+    "acceptedTitle": "Accepted",
+    "acceptedLead": "Booking {reference}. Deposit due {date}.",
+    "acceptedNoDate": "Booking {reference}.",
+    "acceptedLoaded": "This proposal has already been accepted.",
+    "declinedTitle": "Declined",
+    "declinedLead": "Thank you. The team has your decision.",
+    "expiredLead": "This proposal can no longer be accepted.",
+    "dash": "—"
   }
 }
