@@ -28,6 +28,19 @@ const guardianName = ref(props.guest.guardian?.name ?? '')
 const guardianRelationship = ref(props.guest.guardian?.relationship ?? '')
 const guardianConsented = ref(props.guest.guardian?.consented ?? false)
 
+const nationalityItems = computed(() => [
+  { label: t('details.chooseCountry'), value: '' },
+  ...props.countries.map(country => ({ label: country.name, value: country.code }))
+])
+
+function onDob(value: string | null): void {
+  dob.value = value ?? ''
+}
+
+function onPassportExpiry(value: string | null): void {
+  passportExpiry.value = value ?? ''
+}
+
 const passport = computed(() => passportFieldState(props.guest.passport_on_file))
 const showGuardian = computed(() => props.guest.is_minor_now || isMinorToday(dob.value || null))
 const guestHeading = computed(() => {
@@ -108,10 +121,10 @@ function save(): void {
         :class="{ bad: Boolean(errors.dob) }"
       >
         <label>{{ t('complete.dob') }}</label>
-        <input
-          v-model="dob"
-          type="date"
-        >
+        <AnkDateInput
+          :model-value="dob || null"
+          @update:model-value="onDob"
+        />
         <div class="err">
           {{ errors.dob }}
         </div>
@@ -121,18 +134,11 @@ function save(): void {
         :class="{ bad: Boolean(errors.nationality) }"
       >
         <label>{{ t('details.chooseCountry') }}</label>
-        <select v-model="nationality">
-          <option value="">
-            {{ t('details.chooseCountry') }}
-          </option>
-          <option
-            v-for="country in countries"
-            :key="country.code"
-            :value="country.code"
-          >
-            {{ country.name }}
-          </option>
-        </select>
+        <USelect
+          v-model="nationality"
+          class="w-full"
+          :items="nationalityItems"
+        />
         <div class="err">
           {{ errors.nationality }}
         </div>
@@ -165,10 +171,10 @@ function save(): void {
         :class="{ bad: Boolean(errors.passport_expiry) }"
       >
         <label>{{ t('complete.passportExpiry') }}</label>
-        <input
-          v-model="passportExpiry"
-          type="date"
-        >
+        <AnkDateInput
+          :model-value="passportExpiry || null"
+          @update:model-value="onPassportExpiry"
+        />
         <div class="err">
           {{ errors.passport_expiry }}
         </div>

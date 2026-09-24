@@ -164,6 +164,12 @@ watch(() => flow.value.cabins, async () => {
   }
 }, { deep: true })
 
+const selboxSelectUi = {
+  base: '!bg-transparent !ring-0 !px-0 !py-0 font-display !text-[16px] tracking-[.06em] !text-(--ivory) min-h-0',
+  value: 'font-display tracking-[.06em]',
+  trailingIcon: '!text-(--iv62)'
+}
+
 function setCount(n: number): void {
   flow.value.cabins = distributeGuests(
     flow.value.adults,
@@ -246,6 +252,19 @@ const counts = computed(() => {
 
   return list
 })
+
+const countItems = computed(() => counts.value.map(n => ({
+  label: t('cabins.count', { n }),
+  value: n
+})))
+
+function onCount(value: string | number | null | undefined): void {
+  if (typeof value !== 'number') {
+    return
+  }
+
+  setCount(value)
+}
 </script>
 
 <template>
@@ -262,18 +281,13 @@ const counts = computed(() => {
         <div class="selrow">
           <div class="selbox">
             <label>{{ t('cabins.number') }}</label>
-            <select
-              :value="flow.cabins.length || range.min"
-              @change="setCount(Number(($event.target as HTMLSelectElement).value))"
-            >
-              <option
-                v-for="n in counts"
-                :key="n"
-                :value="n"
-              >
-                {{ t('cabins.count', { n }) }}
-              </option>
-            </select>
+            <USelect
+              variant="none"
+              :model-value="flow.cabins.length || range.min"
+              :items="countItems"
+              :ui="selboxSelectUi"
+              @update:model-value="onCount"
+            />
           </div>
           <div class="selbox grow">
             <label>{{ t('cabins.party') }}</label>

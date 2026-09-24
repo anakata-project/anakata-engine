@@ -38,6 +38,30 @@ const rates = computed(() => feed.value?.rates ?? null)
 const capacity = computed(() => settings.value?.charter.capacity ?? 16)
 const contexts = computed(() => settings.value?.charter.group_contexts ?? [])
 const departures = computed<Array<EngineDeparture>>(() => feed.value?.departures ?? [])
+const departureItems = computed(() => [
+  { label: t('charter.chooseDeparture'), value: '' },
+  ...departures.value.map(dep => ({
+    label: `${formatIsoDate(dep.embark)} · ${dep.yacht} · ${dep.itinerary}`,
+    value: dep.id
+  }))
+])
+const contextItems = computed(() => contexts.value.map(item => ({
+  label: item,
+  value: item
+})))
+
+function onDeparture(value: string | number | null | undefined): void {
+  departureId.value = typeof value === 'number' ? value : null
+}
+
+function onDate(which: 'from' | 'to', value: string | null): void {
+  if (which === 'from') {
+    preferredFrom.value = value ?? ''
+    return
+  }
+
+  preferredTo.value = value ?? ''
+}
 
 const firstYear = computed(() => rates.value?.years[0] ?? null)
 const weekRate = computed(() => {
@@ -267,10 +291,10 @@ async function submit(): Promise<void> {
               :class="{ bad: bad.dates }"
             >
               <label>{{ t('charter.from') }}</label>
-              <input
-                v-model="preferredFrom"
-                type="date"
-              >
+              <AnkDateInput
+                :model-value="preferredFrom || null"
+                @update:model-value="onDate('from', $event)"
+              />
               <div class="err">
                 {{ t('charter.datesErr') }}
               </div>
@@ -280,10 +304,10 @@ async function submit(): Promise<void> {
               :class="{ bad: bad.dates }"
             >
               <label>{{ t('charter.to') }}</label>
-              <input
-                v-model="preferredTo"
-                type="date"
-              >
+              <AnkDateInput
+                :model-value="preferredTo || null"
+                @update:model-value="onDate('to', $event)"
+              />
             </div>
           </div>
           <div
@@ -292,33 +316,23 @@ async function submit(): Promise<void> {
             :class="{ bad: bad.departure }"
           >
             <label>{{ t('charter.departure') }}</label>
-            <select v-model="departureId">
-              <option :value="null">
-                {{ t('charter.chooseDeparture') }}
-              </option>
-              <option
-                v-for="dep in departures"
-                :key="dep.id"
-                :value="dep.id"
-              >
-                {{ formatIsoDate(dep.embark) }} · {{ dep.yacht }} · {{ dep.itinerary }}
-              </option>
-            </select>
+            <USelect
+              class="w-full"
+              :model-value="departureId ?? ''"
+              :items="departureItems"
+              @update:model-value="onDeparture"
+            />
             <div class="err">
               {{ t('details.required') }}
             </div>
           </div>
           <div class="field">
             <label>{{ t('charter.context') }}</label>
-            <select v-model="context">
-              <option
-                v-for="item in contexts"
-                :key="item"
-                :value="item"
-              >
-                {{ item }}
-              </option>
-            </select>
+            <USelect
+              v-model="context"
+              class="w-full"
+              :items="contextItems"
+            />
           </div>
           <div
             class="field"

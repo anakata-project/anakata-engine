@@ -11,6 +11,10 @@ const { flow } = useBookingFlow()
 const name = ref('')
 const email = ref('')
 const category = ref<'SUITE' | 'OWNER'>('SUITE')
+const categoryItems = computed(() => [
+  { label: t('waitlist.suite'), value: 'SUITE' as const },
+  { label: t('waitlist.owner'), value: 'OWNER' as const }
+])
 const adults = ref(2)
 const children = ref(0)
 const notes = ref('')
@@ -113,14 +117,11 @@ async function submit(): Promise<void> {
         </div>
         <div class="field">
           <label>{{ t('waitlist.category') }}</label>
-          <select v-model="category">
-            <option value="SUITE">
-              {{ t('waitlist.suite') }}
-            </option>
-            <option value="OWNER">
-              {{ t('waitlist.owner') }}
-            </option>
-          </select>
+          <USelect
+            v-model="category"
+            class="w-full"
+            :items="categoryItems"
+          />
         </div>
         <div
           class="field"

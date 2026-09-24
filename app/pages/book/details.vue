@@ -38,6 +38,11 @@ const { data: countries } = await useAsyncData('engine-countries', () =>
   request('/api/engine/countries') as Promise<Array<EngineCountry>>
 )
 
+const nationalityItems = computed(() => [
+  { label: t('details.chooseCountry'), value: '' },
+  ...(countries.value ?? []).map(country => ({ label: country.name, value: country.code }))
+])
+
 const departure = computed<EngineDeparture | null>(() =>
   feed.value?.departures.find(item => item.id === flow.value.departureId) ?? null
 )
@@ -573,18 +578,11 @@ const declarationItems = computed(() => {
           >
             <div class="field">
               <label>{{ t('details.nationality', { n: index + 1, cabin: guest.cabinCode }) }}</label>
-              <select v-model="guest.nationality">
-                <option value="">
-                  {{ t('details.chooseCountry') }}
-                </option>
-                <option
-                  v-for="country in countries ?? []"
-                  :key="country.code"
-                  :value="country.code"
-                >
-                  {{ country.name }}
-                </option>
-              </select>
+              <USelect
+                v-model="guest.nationality"
+                class="w-full"
+                :items="nationalityItems"
+              />
             </div>
             <label class="chkrow">
               <input

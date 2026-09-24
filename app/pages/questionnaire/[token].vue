@@ -80,6 +80,17 @@ function draft(guestId: number, key: string): string {
   return drafts.value[guestId]?.[key] ?? ''
 }
 
+function choiceItems(options: Array<string>): Array<{ label: string, value: string }> {
+  return [
+    { label: '\u00a0', value: '' },
+    ...options.map(option => ({ label: option, value: option }))
+  ]
+}
+
+function onChoice(guestId: number, key: string, value: string | number | null | undefined): void {
+  setDraft(guestId, key, typeof value === 'string' ? value : '')
+}
+
 function setDraft(guestId: number, key: string, value: string): void {
   drafts.value = {
     ...drafts.value,
@@ -184,21 +195,14 @@ async function saveGuest(guestId: number): Promise<void> {
           >
             {{ t('questionnaire.replace') }}
           </p>
-          <select
+          <USelect
             v-if="question.type === 'choice'"
             :id="`q-${guest.id}-${question.key}`"
-            :value="draft(guest.id, question.key)"
-            @change="setDraft(guest.id, question.key, ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="" />
-            <option
-              v-for="option in question.options"
-              :key="option"
-              :value="option"
-            >
-              {{ option }}
-            </option>
-          </select>
+            class="w-full"
+            :model-value="draft(guest.id, question.key)"
+            :items="choiceItems(question.options)"
+            @update:model-value="onChoice(guest.id, question.key, $event)"
+          />
           <textarea
             v-else
             :id="`q-${guest.id}-${question.key}`"
