@@ -38,10 +38,14 @@ const { data: countries } = await useAsyncData('engine-countries', () =>
   request('/api/engine/countries') as Promise<Array<EngineCountry>>
 )
 
-const nationalityItems = computed(() => [
-  { label: t('details.chooseCountry'), value: '' },
-  ...(countries.value ?? []).map(country => ({ label: country.name, value: country.code }))
-])
+const nationalityItems = computed(() =>
+  (countries.value ?? []).map(country => ({ label: country.name, value: country.code }))
+)
+
+const checkUi = {
+  root: 'items-start gap-3 py-3',
+  label: 'font-sans font-normal text-[13.5px] leading-snug text-(--ivory)'
+}
 
 const departure = computed<EngineDeparture | null>(() =>
   feed.value?.departures.find(item => item.id === flow.value.departureId) ?? null
@@ -505,13 +509,11 @@ const declarationItems = computed(() => {
               <div class="err">
                 {{ t('details.emailErr') }}
               </div>
-              <label class="chkrow">
-                <input
-                  v-model="flow.cartMarketing"
-                  type="checkbox"
-                >
-                <span>{{ t('details.checkoutMarketing') }}</span>
-              </label>
+              <UCheckbox
+                v-model="flow.cartMarketing"
+                :label="t('details.checkoutMarketing')"
+                :ui="checkUi"
+              />
             </div>
             <div
               class="field"
@@ -542,13 +544,11 @@ const declarationItems = computed(() => {
               </button>
             </div>
           </div>
-          <label class="chkrow">
-            <input
-              v-model="flow.travelAdvisor"
-              type="checkbox"
-            >
-            <span>{{ t('details.advisor') }}</span>
-          </label>
+          <UCheckbox
+            v-model="flow.travelAdvisor"
+            :label="t('details.advisor')"
+            :ui="checkUi"
+          />
           <div class="field">
             <label>{{ t('details.notes') }}</label>
             <textarea
@@ -557,13 +557,11 @@ const declarationItems = computed(() => {
               :placeholder="t('details.notesPh')"
             />
           </div>
-          <label class="chkrow">
-            <input
-              v-model="flow.marketing"
-              type="checkbox"
-            >
-            <span>{{ t('details.marketing') }}</span>
-          </label>
+          <UCheckbox
+            v-model="flow.marketing"
+            :label="t('details.marketing')"
+            :ui="checkUi"
+          />
           <p class="note">
             {{ settings.copy.details_note }}
           </p>
@@ -578,19 +576,25 @@ const declarationItems = computed(() => {
           >
             <div class="field">
               <label>{{ t('details.nationality', { n: index + 1, cabin: guest.cabinCode }) }}</label>
-              <USelect
-                v-model="guest.nationality"
+              <USelectMenu
+                :model-value="guest.nationality || undefined"
                 class="w-full"
+                value-key="value"
                 :items="nationalityItems"
+                :placeholder="t('details.chooseCountry')"
+                :search-input="{ placeholder: t('details.searchCountry') }"
+                @update:model-value="guest.nationality = typeof $event === 'string' ? $event : ''"
               />
             </div>
-            <label class="chkrow">
-              <input
+            <div class="field">
+              <label aria-hidden="true">&nbsp;</label>
+              <UCheckbox
                 v-model="guest.ecuadorResident"
-                type="checkbox"
-              >
-              <span>{{ t('details.ecuador') }}</span>
-            </label>
+                class="guest-check"
+                :label="t('details.ecuador')"
+                :ui="{ root: 'items-center gap-3 min-h-[46px]', label: 'font-sans font-normal text-[13.5px] text-(--ivory)' }"
+              />
+            </div>
           </div>
           <p class="note">
             {{ t('details.pngDob') }}
@@ -648,24 +652,21 @@ const declarationItems = computed(() => {
 
         <div class="fsec">
           <h3>{{ t('details.declarations') }}</h3>
-          <label
+          <UCheckbox
             v-for="item in declarationItems"
             :key="item.document"
-            class="chkrow"
+            :model-value="flow.declarations.includes(item.document)"
+            :ui="checkUi"
+            @update:model-value="toggleDeclaration(item.document, $event === true)"
           >
-            <input
-              type="checkbox"
-              :checked="flow.declarations.includes(item.document)"
-              @change="toggleDeclaration(item.document, ($event.target as HTMLInputElement).checked)"
-            >
-            <span>
+            <template #label>
               {{ item.label }}
               <span class="ver">{{ item.version }}</span>
               <template v-if="!item.required">
                 — {{ t('details.declLater') }}
               </template>
-            </span>
-          </label>
+            </template>
+          </UCheckbox>
         </div>
 
         <div class="paths">
@@ -742,7 +743,7 @@ const declarationItems = computed(() => {
           {{ t('details.back') }}
         </button>
       </div>
-      <PricePricePanel
+      <PricePanel
         :quote="flow.serverQuote"
         :estimate="estimate"
         :settings="settings"
@@ -763,7 +764,7 @@ const declarationItems = computed(() => {
             {{ flow.path === 'PAY_LATER' ? settings.copy.pay_today : t('details.payOnlineNote') }}
           </p>
         </div>
-      </PricePricePanel>
+      </PricePanel>
     </div>
   </div>
 </template>

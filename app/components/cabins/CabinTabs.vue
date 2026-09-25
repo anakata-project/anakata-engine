@@ -23,40 +23,26 @@ function childOptions(max: number): Array<number> {
   return Array.from({ length: max }, (_, index) => index)
 }
 
-function numberItems(values: Array<number>): Array<{ label: string, value: number }> {
-  return values.map(n => ({ label: String(n), value: n }))
+function onAdults(index: number, event: Event): void {
+  emit('adults', index, Number((event.target as HTMLSelectElement).value))
 }
 
-const cabtabSelectUi = {
-  base: '!bg-(--forest-950) ring ring-inset ring-(--hair) !text-(--iv62) !px-1.5 !py-1 font-mono !text-[9px] tracking-[.12em] uppercase min-h-0'
-}
-
-function onAdults(index: number, value: string | number | null | undefined): void {
-  if (typeof value !== 'number') {
-    return
-  }
-
-  emit('adults', index, value)
-}
-
-function onChildren(index: number, value: string | number | null | undefined): void {
-  if (typeof value !== 'number') {
-    return
-  }
-
-  emit('children', index, value)
+function onChildren(index: number, event: Event): void {
+  emit('children', index, Number((event.target as HTMLSelectElement).value))
 }
 </script>
 
 <template>
   <div class="cabtabs">
-    <button
+    <div
       v-for="(cabin, index) in cabins"
       :key="index"
-      type="button"
       class="cabtab"
       :class="{ cur: selected === index }"
+      role="button"
+      tabindex="0"
       @click="emit('select', index)"
+      @keydown.enter.prevent="emit('select', index)"
     >
       <div class="t">
         {{ t('cabins.tab', { n: index + 1 }) }}{{ cabin.cabinCode ? ` · ${cabin.cabinCode}` : '' }}
@@ -69,24 +55,34 @@ function onChildren(index: number, value: string | number | null | undefined): v
         · {{ cabin.cabinCode ? t('cabins.picked') : t('cabins.pickOnDeck') }}
       </span>
       <div class="cabtab-row">
-        <USelect
-          :model-value="cabin.adults"
-          :items="numberItems(adultOptions(maxPerCabin))"
-          :ui="cabtabSelectUi"
-          @pointerdown.stop
+        <select
+          :value="cabin.adults"
           @click.stop
-          @update:model-value="onAdults(index, $event)"
-        />
-        <USelect
-          :model-value="cabin.children"
-          :items="numberItems(childOptions(maxPerCabin))"
-          :ui="cabtabSelectUi"
-          @pointerdown.stop
+          @change="onAdults(index, $event)"
+        >
+          <option
+            v-for="n in adultOptions(maxPerCabin)"
+            :key="n"
+            :value="n"
+          >
+            {{ n }}
+          </option>
+        </select>
+        <select
+          :value="cabin.children"
           @click.stop
-          @update:model-value="onChildren(index, $event)"
-        />
+          @change="onChildren(index, $event)"
+        >
+          <option
+            v-for="n in childOptions(maxPerCabin)"
+            :key="n"
+            :value="n"
+          >
+            {{ n }}
+          </option>
+        </select>
         <span class="s">{{ t('cabins.adultsChildren') }}</span>
       </div>
-    </button>
+    </div>
   </div>
 </template>

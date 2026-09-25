@@ -239,28 +239,6 @@ html:not(.dark) .heroband .coords {
   margin: 26px auto 0;
 }
 
-.engine-footer .api-status {
-  display: block;
-  margin-top: 18px;
-}
-
-.api-status {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--iv38);
-  white-space: nowrap;
-}
-
-.api-status--ok {
-  color: var(--ok);
-}
-
-.api-status--down {
-  color: var(--coral);
-}
-
 .engine-placeholder {
   border: 1px solid var(--hair);
   background: var(--forest-900);
@@ -807,12 +785,30 @@ html:not(.dark) .bookwrap {
 
 .depRow {
   display: grid;
-  grid-template-columns: 1.3fr .8fr 1fr .9fr auto;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  row-gap: 4px;
   align-items: center;
   padding: 14px 26px;
   border-bottom: 1px solid rgba(242, 241, 225, .07);
   font-size: 13px;
+}
+
+.depRow > .d,
+.depRow > .y,
+.depRow > .st-av,
+.depRow > .st-ur,
+.depRow > .st-fu,
+.depRow > .pr {
+  grid-column: 1;
+  min-width: 0;
+  line-height: 1.45;
+}
+
+.depRow > .dep-actions {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
 }
 
 .depRow:last-child {
@@ -839,6 +835,17 @@ html:not(.dark) .bookwrap {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+}
+
+.depRow .pr {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.depRow .pr > span {
+  white-space: nowrap;
 }
 
 .depRow.deal-on,
@@ -1612,6 +1619,8 @@ html:not(.dark) .bookwrap {
 }
 
 .selbox select {
+  display: block;
+  width: 100%;
   background: transparent;
   border: none;
   color: var(--ivory);
@@ -1619,6 +1628,13 @@ html:not(.dark) .bookwrap {
   font-size: 16px;
   letter-spacing: .06em;
   outline: none;
+  cursor: pointer;
+}
+
+.selbox select option,
+.cabtab select option {
+  background: var(--forest-950);
+  color: var(--ivory);
 }
 
 .partyline {
@@ -1682,6 +1698,8 @@ html:not(.dark) .bookwrap {
   padding: 4px 6px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9px;
+  min-width: 2.75em;
+  cursor: pointer;
 }
 
 .deck {
@@ -1879,6 +1897,9 @@ html:not(.dark) .bookwrap {
 
 .promo .pr {
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
 }
 
 .promo input {
@@ -2201,6 +2222,12 @@ html:not(.dark) .bookwrap {
   .drow {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .depRow > .dep-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
   }
 
   .rail {

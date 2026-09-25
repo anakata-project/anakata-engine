@@ -29,10 +29,6 @@
     "line2Before": "0°40′S 90°33′W",
     "line2After": " · info{'@'}anakata.co · anakata.co"
   },
-  "shell": {
-    "apiOk": "API · OK",
-    "apiDown": "API · DOWN"
-  },
   "pages": {
     "home": "Book Your Expedition",
     "itineraries": "Itinerary & Departure",
@@ -258,6 +254,7 @@
     "guests": "Guests",
     "nationality": "Guest {n} · {cabin} · nationality",
     "chooseCountry": "Choose a country",
+    "searchCountry": "Search countries",
     "ecuador": "Resident of Ecuador",
     "pngDob": "The PNG category estimate uses nationality and the 12-year cutoff. The final category depends on each guest's date of birth.",
     "fees": "Galápagos fees",

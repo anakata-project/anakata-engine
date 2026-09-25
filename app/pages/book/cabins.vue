@@ -164,12 +164,6 @@ watch(() => flow.value.cabins, async () => {
   }
 }, { deep: true })
 
-const selboxSelectUi = {
-  base: '!bg-transparent !ring-0 !px-0 !py-0 font-display !text-[16px] tracking-[.06em] !text-(--ivory) min-h-0',
-  value: 'font-display tracking-[.06em]',
-  trailingIcon: '!text-(--iv62)'
-}
-
 function setCount(n: number): void {
   flow.value.cabins = distributeGuests(
     flow.value.adults,
@@ -281,20 +275,25 @@ function onCount(value: string | number | null | undefined): void {
         <div class="selrow">
           <div class="selbox">
             <label>{{ t('cabins.number') }}</label>
-            <USelect
-              variant="none"
-              :model-value="flow.cabins.length || range.min"
-              :items="countItems"
-              :ui="selboxSelectUi"
-              @update:model-value="onCount"
-            />
+            <select
+              :value="flow.cabins.length || range.min"
+              @change="onCount(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option
+                v-for="item in countItems"
+                :key="item.value"
+                :value="item.value"
+              >
+                {{ item.label }}
+              </option>
+            </select>
           </div>
           <div class="selbox grow">
             <label>{{ t('cabins.party') }}</label>
             <div class="partyline">
-              {{ flow.adults }} {{ t('search.adultsCount', { n: flow.adults }) }}
+              {{ t('search.adultsCount', { n: flow.adults }) }}
               <template v-if="flow.children">
-                + {{ flow.children }} {{ t('search.childrenCount', { n: flow.children }) }}
+                + {{ t('search.childrenCount', { n: flow.children }) }}
               </template>
             </div>
           </div>
@@ -358,7 +357,7 @@ function onCount(value: string | number | null | undefined): void {
           </button>
         </div>
       </div>
-      <PricePricePanel
+      <PricePanel
         :quote="flow.serverQuote"
         :estimate="estimate"
         :settings="settings"

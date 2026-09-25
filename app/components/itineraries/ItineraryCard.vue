@@ -191,7 +191,10 @@ function onWaitlist(dep: EngineDeparture): void {
               {{ t('itineraries.notEnough') }}
             </template>
           </div>
-          <ItinerariesPriceCell :price="fromPrice(dep, rates, offers)" />
+          <ItinerariesPriceCell
+            compact
+            :price="fromPrice(dep, rates, offers)"
+          />
           <ItinerariesDepartureActions
             :action="rowAction(dep, min)"
             :departure="dep"
