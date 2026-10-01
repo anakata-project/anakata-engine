@@ -28,6 +28,11 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/engine.css'],
 
+  colorMode: {
+    preference: 'light',
+    fallback: 'light'
+  },
+
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:8000',
@@ -83,8 +88,12 @@ export default defineNuxtConfig({
   },
 
   i18n: {
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    vueI18n: './i18n.config.ts',
     locales: [
-      { code: 'en', language: 'en', file: 'en.json' }
+      { code: 'en', language: 'en', file: 'en.json' },
+      { code: 'es', language: 'es', file: 'es.json' }
     ]
   }
 })

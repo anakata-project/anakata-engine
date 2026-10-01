@@ -22,7 +22,19 @@ const { flow, hydrateFromSettings } = useBookingFlow()
 hydrateFromSettings(props.settings)
 
 const pickPhase = ref<MonthPick['phase']>(0)
-const openPop = ref<'dates' | 'guests' | null>(null)
+const openPop = ref<'dates' | 'guests' | null>('guests')
+
+onMounted(() => {
+  const mq = window.matchMedia('(max-width: 760px)')
+  const closeDefault = () => {
+    if (mq.matches && openPop.value === 'guests') {
+      openPop.value = null
+    }
+  }
+  closeDefault()
+  mq.addEventListener('change', closeDefault)
+  onUnmounted(() => mq.removeEventListener('change', closeDefault))
+})
 
 const grid = computed(() =>
   buildMonthGrid(
@@ -58,13 +70,7 @@ const dateHint = computed(() => {
   return t('search.hintStart')
 })
 
-const childHint = computed(() =>
-  t('search.childAges', {
-    min: props.settings.guests.child_min_age,
-    max: props.settings.guests.child_max_age,
-    under: props.settings.guests.under_age_message
-  })
-)
+const childHint = computed(() => t('search.childAgesLabel'))
 
 const maxParty = computed(() => props.settings.guests.max_per_yacht)
 
@@ -141,7 +147,9 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <span class="mono klabel">{{ t('search.find') }}</span>
+    <h2 class="disp find-title">
+      {{ t('search.find') }}
+    </h2>
     <div class="bookwrap">
       <div class="bookbar">
         <div
@@ -190,54 +198,7 @@ onUnmounted(() => {
         >
           <label>{{ t('search.guests') }}</label>
           <div class="val">
-            {{ guestLabel }}
-          </div>
-          <div
-            v-if="openPop === 'guests'"
-            class="pop gpop on"
-            @click.stop
-          >
-            <div class="grow">
-              <div class="gl">
-                {{ t('search.adults') }}
-              </div>
-              <div class="stepper">
-                <button
-                  type="button"
-                  @click="stepAdults(-1)"
-                >
-                  −
-                </button>
-                <span class="n">{{ flow.adults }}</span>
-                <button
-                  type="button"
-                  @click="stepAdults(1)"
-                >
-                  ＋
-                </button>
-              </div>
-            </div>
-            <div class="grow">
-              <div class="gl">
-                {{ t('search.children') }}
-                <small>{{ childHint }}</small>
-              </div>
-              <div class="stepper">
-                <button
-                  type="button"
-                  @click="stepChildren(-1)"
-                >
-                  −
-                </button>
-                <span class="n">{{ flow.children }}</span>
-                <button
-                  type="button"
-                  @click="stepChildren(1)"
-                >
-                  ＋
-                </button>
-              </div>
-            </div>
+            <span v-if="openPop !== 'guests'">{{ guestLabel }}</span>
           </div>
         </div>
         <div class="bb act">
@@ -249,8 +210,72 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
+      <div
+        v-if="openPop === 'guests'"
+        class="guest-panel"
+        @click.stop
+      >
+        <p class="guest-note">
+          {{ t('search.suiteLimit', {
+            maxCabin: settings.guests.max_per_cabin,
+            maxYacht: settings.guests.max_per_yacht
+          }) }}
+        </p>
+        <div class="guest-lines">
+          <div class="grow">
+            <div class="gl">
+              {{ t('search.adults') }}
+            </div>
+            <div class="gstep">
+              <button
+                type="button"
+                @click="stepAdults(-1)"
+              >
+                −
+              </button>
+              <span class="n">{{ flow.adults }}</span>
+              <button
+                type="button"
+                @click="stepAdults(1)"
+              >
+                +
+              </button>
+            </div>
+            <span
+              v-if="settings.guests.adult_required_with_children"
+              class="guest-aside"
+            >
+              {{ t('search.includeAdult') }}
+            </span>
+          </div>
+          <div class="grow">
+            <div class="gl">
+              {{ t('search.children') }}
+              <small>{{ childHint }}</small>
+            </div>
+            <div class="gstep">
+              <button
+                type="button"
+                @click="stepChildren(-1)"
+              >
+                −
+              </button>
+              <span class="n">{{ flow.children }}</span>
+              <button
+                type="button"
+                @click="stepChildren(1)"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <p class="bbnote">
+    <p
+      v-if="openPop !== 'guests'"
+      class="bbnote"
+    >
       {{ t('search.footnote', {
         maxCabin: settings.guests.max_per_cabin,
         maxYacht: settings.guests.max_per_yacht

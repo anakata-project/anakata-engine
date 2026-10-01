@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { EngineDeparture, EngineSettings } from '../../types/api'
 import {
-  formatIsoDate,
   formatUsd,
   minCabins
 } from '../../utils/engineFlow'
@@ -31,12 +30,22 @@ const childrenBit = computed(() =>
 const partyLine = computed(() =>
   t('trip.partyLine', {
     n: min.value,
-    party: props.party,
     adults: t('search.adultsCount', { n: props.adults }),
     children: childrenBit.value,
     cabins: min.value
   })
 )
+
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const selectedDate = computed(() => {
+  const parts = props.departure.embark.split('-')
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  const year = parts[0]
+
+  return `${SHORT_MONTHS[month - 1] ?? ''} ${day}, ${year}`
+})
 </script>
 
 <template>
@@ -59,7 +68,7 @@ const partyLine = computed(() =>
         {{ t('trip.assistance') }}
       </div>
       <div class="railsel">
-        {{ t('trip.selected', { date: formatIsoDate(departure.embark), yacht: departure.yacht }) }}
+        {{ t('trip.selected', { date: selectedDate, yacht: departure.yacht }) }}
         <br>
         {{ partyLine }}
       </div>
@@ -70,6 +79,10 @@ const partyLine = computed(() =>
           @click="emit('continue')"
         >
           {{ t('trip.selectCabinsShort') }}
+          <span
+            class="dep-go"
+            aria-hidden="true"
+          />
         </button>
       </div>
     </div>

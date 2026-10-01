@@ -1,15 +1,20 @@
 <script setup lang="ts">
+const { t, locale, setLocale } = useI18n()
+const saved = useCookie<'en' | 'es'>('engine-locale')
+
+if (saved.value === 'en' || saved.value === 'es') {
+  await setLocale(saved.value)
+}
+
 useHead({
   titleTemplate: '%s · Anakata',
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
   ],
   htmlAttrs: {
-    lang: 'en'
+    lang: locale
   }
 })
-
-const { t } = useI18n()
 
 useSeoMeta({
   description: t('seo.description')

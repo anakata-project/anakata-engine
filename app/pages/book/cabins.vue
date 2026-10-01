@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import type { EngineCabin, EngineDeparture, EngineEventParams } from '../../types/api'
 import { cabProblems } from '../../utils/cabProblems'
+import { deckCodeFor } from '../../utils/deckCode'
+import { DECK_100_SUITES, type Deck100SuiteCode } from '../../utils/deck100'
+import { DECK_200_SUITES, type Deck200SuiteCode } from '../../utils/deck200'
+import type { DeckSuiteStatus } from '../../utils/deckPlan'
 import { cabinCountRange, distributeGuests } from '../../utils/distributeGuests'
-import { formatIsoDate, suitePpDouble } from '../../utils/engineFlow'
 import { guestsFromCabins } from '../../composables/useBookingFlow'
-import { estimatePrice, ownerPpDouble } from '../../utils/priceEstimate'
+import { estimatePrice } from '../../utils/priceEstimate'
+import suitePhoto from '../../assets/images/suite.png'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { data: feed } = useEngineFeed()
 const { flow, party, hydrateFromSettings } = useBookingFlow()
 const checkout = useCheckout()
@@ -211,31 +215,220 @@ async function continueToDetails(): Promise<void> {
   await navigateTo('/book/details')
 }
 
-async function back(): Promise<void> {
-  if (flow.value.checkoutToken) {
-    await hold.release()
-  }
-
-  if (itinerary.value) {
-    await navigateTo(`/itineraries/${itinerary.value.slug}`)
-
-    return
-  }
-
-  await navigateTo('/itineraries')
-}
-
-const label = computed(() => {
+const kicker = computed(() => {
   if (!itinerary.value || !departure.value) {
     return ''
   }
 
-  const offer = departure.value.offers[0]
-  const festive = departure.value.festive ? ` · ${t('cabins.festive')}` : ''
-  const offerBit = offer ? ` · ${offer}` : ''
+  const parts = departure.value.embark.split('-')
+  const year = Number(parts[0])
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  const date = new Intl.DateTimeFormat(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+  const adults = t('search.adultsCount', { n: flow.value.adults })
+  const children = flow.value.children > 0
+    ? ` · ${t('search.childrenCount', { n: flow.value.children })}`
+    : ''
 
-  return `${itinerary.value.name} · ${departure.value.yacht} · ${formatIsoDate(departure.value.embark)}${festive}${offerBit}`
+  const suffix = selectionSummary.value
+
+  return `${date} / ${adults}${children} / ${itinerary.value.name} / ${departure.value.yacht}${suffix}`
 })
+
+const selectionSummary = computed(() => {
+  let standard = 0
+  let owner = 0
+
+  for (const cabin of flow.value.cabins) {
+    if (!cabin.cabinCode) {
+      continue
+    }
+
+    if (cabinCategories.value[cabin.cabinCode] === 'OWNER') {
+      owner += 1
+    } else {
+      standard += 1
+    }
+  }
+
+  const parts: Array<string> = []
+
+  if (standard > 0) {
+    parts.push(t('cabins.kickerStandard', { n: standard }))
+  }
+
+  if (owner > 0) {
+    parts.push(t('cabins.kickerOwner', { n: owner }))
+  }
+
+  return parts.length ? ` / ${parts.join(' / ')}` : ''
+})
+
+function cabinNumber(code: string): number | null {
+  const match = code.match(/(\d+)/)
+
+  return match ? Number(match[1]) : null
+}
+
+function slotName(code: string | null): string {
+  if (!code) {
+    return t('cabins.pickOnDeck')
+  }
+
+  if (cabinCategories.value[code] === 'OWNER') {
+    return t('cabins.ownerName')
+  }
+
+  const number = cabinNumber(code)
+
+  return t('cabins.standardName', { n: number ?? code })
+}
+
+const standardPoints = computed(() => [
+  t('cabins.pointKing'),
+  t('cabins.pointShower'),
+  t('cabins.upTo', { n: maxPerCabin.value })
+])
+
+const ownerPoints = computed(() => [
+  t('cabins.pointKing'),
+  t('cabins.pointCloset'),
+  t('cabins.pointSofa'),
+  t('cabins.pointButler'),
+  t('cabins.pointShowerOwner')
+])
+
+type SuiteCard = {
+  code: string
+  category: 'SUITE' | 'OWNER'
+  kicker: string
+  title: string
+  lead: string
+  points: Array<string>
+}
+
+const selections = computed<Array<SuiteCard>>(() =>
+  flow.value.cabins.flatMap((cabin) => {
+    if (!cabin.cabinCode) {
+      return []
+    }
+
+    const category = cabinCategories.value[cabin.cabinCode] ?? 'SUITE'
+    const number = cabinNumber(cabin.cabinCode)
+
+    if (category === 'OWNER') {
+      return [{
+        code: cabin.cabinCode,
+        category,
+        kicker: t('cabins.ownerSelected'),
+        title: t('cabins.ownerName'),
+        lead: t('cabins.ownerLead'),
+        points: ownerPoints.value
+      }]
+    }
+
+    return [{
+      code: cabin.cabinCode,
+      category,
+      kicker: t('cabins.suiteSelected', { n: number ?? cabin.cabinCode }),
+      title: t('cabins.standardTitle'),
+      lead: t('cabins.standardLead'),
+      points: standardPoints.value
+    }]
+  })
+)
+
+function focusSlot(index: number): void {
+  flow.value.selectedCabinIndex = index
+}
+
+function stepGuests(index: number, field: 'adults' | 'children', delta: number): void {
+  const cabin = flow.value.cabins[index]
+
+  if (!cabin) {
+    return
+  }
+
+  const next = cabin[field] + delta
+
+  if (field === 'adults' && (next < 1 || next > maxPerCabin.value)) {
+    return
+  }
+
+  if (field === 'children' && (next < 0 || next > maxPerCabin.value)) {
+    return
+  }
+
+  const adults = field === 'adults' ? next : cabin.adults
+  const children = field === 'children' ? next : cabin.children
+
+  if (adults + children > maxPerCabin.value) {
+    return
+  }
+
+  flow.value.cabins[index] = { ...cabin, [field]: next }
+  flow.value.selectedCabinIndex = index
+}
+
+function backToSelection(): void {
+  document.getElementById('select-suite')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+const partyLine = computed(() => {
+  const adults = t('search.adultsCount', { n: flow.value.adults })
+  if (flow.value.children === 0) {
+    return adults
+  }
+
+  return `${adults} · ${t('search.childrenCount', { n: flow.value.children })}`
+})
+
+const chosenLabels = computed(() =>
+  flow.value.cabins
+    .map(cabin => cabin.cabinCode)
+    .filter((code): code is string => Boolean(code))
+)
+
+function statusesFor<Code extends string>(codes: ReadonlyArray<Code>): Partial<Record<Code, DeckSuiteStatus>> {
+  const statuses: Partial<Record<Code, DeckSuiteStatus>> = {}
+
+  for (const cabin of deck.value ?? []) {
+    const id = deckCodeFor(cabin.code)
+
+    if (!id || !(codes as ReadonlyArray<string>).includes(id)) {
+      continue
+    }
+
+    const chosen = flow.value.cabins.some(row => row.cabinCode === cabin.code)
+    statuses[id as Code] = chosen ? 'selected' : cabin.bookable ? 'available' : 'booked'
+  }
+
+  return statuses
+}
+
+const deck100 = computed(() => statusesFor(DECK_100_SUITES))
+const deck200 = computed(() => statusesFor(DECK_200_SUITES))
+
+function pickDeck(code: Deck100SuiteCode | Deck200SuiteCode): void {
+  const cabin = (deck.value ?? []).find(item => deckCodeFor(item.code) === code)
+
+  if (!cabin) {
+    return
+  }
+
+  const chosen = flow.value.cabins.some(row => row.cabinCode === cabin.code)
+
+  if (!cabin.bookable && !chosen) {
+    return
+  }
+
+  pick(cabin.code)
+}
 
 const counts = computed(() => {
   const list: Array<number> = []
@@ -253,59 +446,116 @@ const countItems = computed(() => counts.value.map(n => ({
 })))
 
 function onCount(value: string | number | null | undefined): void {
-  if (typeof value !== 'number') {
+  const count = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isInteger(count)) {
     return
   }
 
-  setCount(value)
+  setCount(count)
 }
 </script>
 
 <template>
-  <div v-if="feed && departure && settings && estimate">
-    <span class="mono klabel">{{ label }}</span>
-    <h1 class="disp">
-      {{ t('cabins.title') }}
-    </h1>
-    <p class="sub">
-      {{ t('cabins.sub') }}
-    </p>
-    <div class="cabgrid">
+  <div
+    v-if="feed && departure && settings && estimate"
+    class="suite-page"
+  >
+    <div class="suite-layout">
       <div>
-        <div class="selrow">
-          <div class="selbox">
-            <label>{{ t('cabins.number') }}</label>
-            <select
-              :value="flow.cabins.length || range.min"
-              @change="onCount(Number(($event.target as HTMLSelectElement).value))"
-            >
-              <option
-                v-for="item in countItems"
-                :key="item.value"
-                :value="item.value"
-              >
-                {{ item.label }}
-              </option>
-            </select>
+        <span class="mono trip-kicker">{{ kicker }}</span>
+        <div class="suite-head">
+          <div>
+            <h1 class="disp">
+              {{ t('cabins.title') }}
+            </h1>
+            <p class="sub">
+              {{ t('cabins.sub') }}
+            </p>
           </div>
-          <div class="selbox grow">
-            <label>{{ t('cabins.party') }}</label>
-            <div class="partyline">
-              {{ t('search.adultsCount', { n: flow.adults }) }}
-              <template v-if="flow.children">
-                + {{ t('search.childrenCount', { n: flow.children }) }}
-              </template>
-            </div>
+          <div class="suite-status">
+            {{ chosenLabels.length ? chosenLabels.join(' · ') : t('cabins.noneSelected') }}
           </div>
         </div>
-        <CabinsCabinTabs
-          :cabins="flow.cabins"
-          :selected="flow.selectedCabinIndex"
-          :max-per-cabin="maxPerCabin"
-          @select="flow.selectedCabinIndex = $event"
-          @adults="(index, value) => { flow.cabins[index] = { ...flow.cabins[index]!, adults: value } }"
-          @children="(index, value) => { flow.cabins[index] = { ...flow.cabins[index]!, children: value } }"
-        />
+        <div class="suite-picks">
+          <div class="suite-field">
+            <USelect
+              class="suite-count"
+              :model-value="flow.cabins.length || range.min"
+              :items="countItems"
+              :content="{ align: 'start', side: 'bottom', sideOffset: 0 }"
+              :ui="{
+                content: 'suite-count-menu',
+                item: 'suite-count-item',
+                itemLabel: 'suite-count-label'
+              }"
+              @update:model-value="onCount"
+            >
+              <template #leading>
+                <span>{{ t('cabins.number') }}</span>
+              </template>
+            </USelect>
+          </div>
+          <div class="suite-field">
+            <span>{{ t('cabins.party') }}</span>
+            <b>{{ partyLine }}</b>
+          </div>
+        </div>
+        <div class="suite-slots">
+          <article
+            v-for="(cabin, index) in flow.cabins"
+            :key="index"
+            class="suite-slot"
+            :class="{ cur: flow.selectedCabinIndex === index }"
+            @click="focusSlot(index)"
+          >
+            <span class="slot-kicker">{{ t('cabins.slot', { n: index + 1 }) }}</span>
+            <span class="slot-name">{{ slotName(cabin.cabinCode) }}</span>
+            <div class="guest-line">
+              <span>{{ t('cabins.adults') }}</span>
+              <span class="guest-step">
+                <button
+                  type="button"
+                  :aria-label="t('cabins.fewerAdults')"
+                  @click.stop="stepGuests(index, 'adults', -1)"
+                >
+                  −
+                </button>
+                <b>{{ cabin.adults }}</b>
+                <button
+                  type="button"
+                  :aria-label="t('cabins.moreAdults')"
+                  @click.stop="stepGuests(index, 'adults', 1)"
+                >
+                  +
+                </button>
+              </span>
+            </div>
+            <div class="guest-line">
+              <span>
+                {{ t('cabins.children') }}
+                <small>{{ t('search.childAgesLabel') }}</small>
+              </span>
+              <span class="guest-step">
+                <button
+                  type="button"
+                  :aria-label="t('cabins.fewerChildren')"
+                  @click.stop="stepGuests(index, 'children', -1)"
+                >
+                  −
+                </button>
+                <b>{{ cabin.children }}</b>
+                <button
+                  type="button"
+                  :aria-label="t('cabins.moreChildren')"
+                  @click.stop="stepGuests(index, 'children', 1)"
+                >
+                  +
+                </button>
+              </span>
+            </div>
+          </article>
+        </div>
         <div
           v-if="hold.expired || problems.length || checkout.cabinConflict || checkout.submitError"
           class="cabwarn"
@@ -330,20 +580,77 @@ function onCount(value: string | number | null | undefined): void {
             ⚠ {{ problem }}<br>
           </template>
         </div>
-        <CabinsDeckPlan
-          :cabins="deck ?? []"
-          :selection="flow.cabins"
-          :selected-index="flow.selectedCabinIndex"
-          :suite-rate="suitePpDouble(feed.rates, departure.rate_year)"
-          :owner-rate="ownerPpDouble(feed.rates, departure.rate_year)"
-          @pick="pick"
-        />
-        <div class="dt-actions">
+        <section
+          id="select-suite"
+          class="suite-board"
+        >
+          <h2>{{ t('cabins.selectSuite') }}</h2>
+          <div class="deck-block">
+            <div class="deck-kicker">
+              <b>{{ t('cabins.deck200') }}</b>
+              <span>{{ t('cabins.deckCount', { n: DECK_200_SUITES.length }) }}</span>
+            </div>
+            <CabinsYachtDeck200
+              :statuses="deck200"
+              @select="pickDeck"
+            />
+          </div>
+          <div class="deck-block">
+            <div class="deck-kicker">
+              <b>{{ t('cabins.deck100') }}</b>
+              <span>{{ t('cabins.deckCount', { n: DECK_100_SUITES.length }) }}</span>
+            </div>
+            <CabinsYachtDeck100
+              :statuses="deck100"
+              @select="pickDeck"
+            />
+          </div>
+          <ul class="deck-key">
+            <li><i class="swatch av" />{{ t('cabins.legendAvailable') }}</li>
+            <li><i class="swatch hold" />{{ t('cabins.legendHold') }}</li>
+            <li><i class="swatch booked" />{{ t('cabins.legendBooked') }}</li>
+            <li><i class="swatch sel" />{{ t('cabins.legendSelected') }}</li>
+          </ul>
+        </section>
+        <section
+          v-if="selections.length"
+          class="your-selection"
+        >
+          <h2>{{ t('cabins.yourSelection') }}</h2>
+          <article
+            v-for="card in selections"
+            :key="card.code"
+            class="pick-card"
+          >
+            <img
+              :src="suitePhoto"
+              :alt="card.title"
+            >
+            <div class="pick-copy">
+              <span class="pick-kicker">{{ card.kicker }}</span>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.lead }}</p>
+              <ul class="pick-points">
+                <li
+                  v-for="point in card.points"
+                  :key="point"
+                >
+                  {{ point }}
+                </li>
+              </ul>
+            </div>
+          </article>
+        </section>
+        <div class="suite-actions">
           <button
             type="button"
             class="btn o"
-            @click="back"
+            @click="backToSelection"
           >
+            <span
+              class="dep-go go-back"
+              aria-hidden="true"
+            />
             {{ t('cabins.back') }}
           </button>
           <button
@@ -352,18 +659,37 @@ function onCount(value: string | number | null | undefined): void {
             :disabled="problems.length > 0"
             @click="continueToDetails"
           >
-            <span class="lb">{{ t('cabins.next') }}</span>
-            <span class="ico">→</span>
+            {{ t('cabins.next') }}
+            <span
+              class="dep-go"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
       <PricePanel
+        class="suite-rail"
         :quote="flow.serverQuote"
         :estimate="estimate"
         :settings="settings"
         path="PAY_LATER"
         :title="t('cabins.priceLive')"
-      />
+      >
+        <div class="rail-cta">
+          <button
+            type="button"
+            class="btn cta"
+            :disabled="problems.length > 0"
+            @click="continueToDetails"
+          >
+            {{ t('cabins.toDetails') }}
+            <span
+              class="dep-go"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+      </PricePanel>
     </div>
   </div>
 </template>

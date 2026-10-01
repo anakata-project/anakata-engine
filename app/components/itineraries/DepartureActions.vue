@@ -18,11 +18,7 @@ const { t } = useI18n()
 
 const selectLabel = computed(() => {
   if (props.compact && props.selected) {
-    return t('trip.selectedTick')
-  }
-
-  if (props.compact) {
-    return t('trip.bookNow')
+    return t('itineraries.selected')
   }
 
   return t('itineraries.select')

@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "expeditions": "Expediciones",
+    "charter": "Charter privado",
+    "menu": "Menú",
+    "close": "Cerrar"
+  },
+  "brand": {
+    "alt": "ANAKATA",
+    "subtitle": "EXPEDICIONES ÍNTIMAS EN YATE"
+  },
+  "hero": {
+    "coords": "0°40′S 90°33′W — Galápagos, Ecuador",
+    "coordsPoint": "0°40′S 90°33′W",
+    "coordsPlace": "Galápagos, Ecuador",
+    "titleLine1": "El archipiélago,",
+    "titleLine2": "dieciséis huéspedes por salida",
+    "m1": "El",
+    "m2": "archipiélago,",
+    "m3": "dieciséis huéspedes",
+    "m4": "por salida",
+    "sub": "Siete o catorce noches. De sábado a sábado desde San Cristóbal. Un yate de expedición, nueve suites."
+  },
+  "crumbs": {
+    "dates": "1 · Fechas y huéspedes",
+    "itinerary": "2 · Itinerario y salida",
+    "trip": "3 · Detalle del viaje",
+    "cabins": "4 · Suites y plano",
+    "details": "5 · Tus datos",
+    "confirmation": "6 · Confirmación"
+  },
+  "footer": {
+    "intimate": "Íntimas",
+    "yacht": "Expediciones en yate",
+    "line1": "Expediciones íntimas en yate",
+    "terms": "Términos de reserva",
+    "privacy": "Política de privacidad",
+    "instagram": "Instagram",
+    "linkedin": "LinkedIn",
+    "credit": "Desarrollado por HILO",
+    "rights": "2026 © ANAKATA. Todos los derechos reservados."
+  },
+  "search": {
+    "find": "Encuentra tu expedición",
+    "dates": "Fechas de salida",
+    "date": "Fecha de salida",
+    "guests": "Huéspedes",
+    "check": "Ver disponibilidad",
+    "search": "Buscar",
+    "adults": "Adultos",
+    "children": "Niños",
+    "childAgesLabel": "Edades 6–17",
+    "suiteLimit": "Máximo {maxCabin} huéspedes por suite. {maxYacht} huéspedes",
+    "includeAdult": "incluye un adulto.",
+    "footnote": "Máximo {maxCabin} huéspedes por suite. {maxYacht} huéspedes por yate.",
+    "footnoteAdult": "Cada suite con niños debe incluir un adulto."
+  },
+  "pages": {
+    "home": "Reserva tu expedición",
+    "charter": "Charter privado"
+  }
+}

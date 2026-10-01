@@ -5,10 +5,12 @@ import {
   inWindow,
   suitesFrom
 } from '../../utils/engineFlow'
+import { itineraryPhoto } from '../../utils/itineraryPhoto'
 import { routeMapFor } from '../../utils/routeMaps'
+import prowMark from '../../assets/svg/logo.svg'
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { data: feed, error } = useEngineFeed()
 const { flow, party, hydrateFromSettings } = useBookingFlow()
 const waitlist = useWaitlist()
@@ -71,21 +73,77 @@ const mapData = computed(() =>
 )
 
 const tab = ref<'overview' | 'itinerary' | 'includes' | 'faqs' | 'route'>('overview')
+const openFaq = ref<string | null>(null)
+
+watch(() => [route.query.tab, mapData.value] as const, () => {
+  const value = route.query.tab
+
+  if (value === 'overview' || value === 'itinerary' || value === 'includes' || value === 'faqs') {
+    tab.value = value
+    return
+  }
+
+  if (value === 'route' && mapData.value) {
+    tab.value = 'route'
+  }
+}, { immediate: true })
 
 const tabs = computed(() => {
   const list: Array<{ id: typeof tab.value, label: string }> = [
     { id: 'overview', label: t('trip.tabOverview') },
-    { id: 'itinerary', label: t('trip.tabItinerary') },
-    { id: 'includes', label: t('trip.tabIncludes') },
-    { id: 'faqs', label: t('trip.tabFaqs') }
+    { id: 'itinerary', label: t('trip.tabItinerary') }
   ]
 
   if (mapData.value) {
     list.push({ id: 'route', label: t('trip.tabRoute') })
   }
 
+  list.push(
+    { id: 'includes', label: t('trip.tabIncludes') },
+    { id: 'faqs', label: t('trip.tabFaqs') }
+  )
+
   return list
 })
+
+const kicker = computed(() => {
+  if (!itinerary.value || !selected.value) {
+    return ''
+  }
+
+  const parts = selected.value.embark.split('-')
+  const year = Number(parts[0])
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  const date = new Intl.DateTimeFormat(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+  const adults = t('search.adultsCount', { n: flow.value.adults })
+  const children = flow.value.children > 0
+    ? ` · ${t('search.childrenCount', { n: flow.value.children })}`
+    : ''
+
+  return `${date} / ${adults}${children} / ${itinerary.value.name} / ${selected.value.yacht}`
+})
+
+const routeLine = computed(() =>
+  itinerary.value?.card.highlights.join(' — ') ?? ''
+)
+
+const photo = computed(() => {
+  if (!itinerary.value) {
+    return null
+  }
+
+  return itinerary.value.card.hero_image || itineraryPhoto(itinerary.value.code)
+})
+
+function toggleFaq(question: string): void {
+  openFaq.value = openFaq.value === question ? null : question
+}
 
 const railFrom = computed(() => {
   if (!feed.value || !selected.value) {
@@ -177,31 +235,47 @@ function continueToCabins(): void {
       v-else-if="itinerary && selected && feed"
       class="detgrid"
     >
-      <div>
-        <span class="mono klabel">{{ t('trip.eyebrow') }}</span>
+      <div class="trip-main">
+        <span class="mono trip-kicker">{{ kicker }}</span>
         <div class="dt-head">
-          <h1 class="disp">
-            {{ itinerary.name }}
-          </h1>
+          <div>
+            <h1 class="disp">
+              {{ itinerary.name }}
+            </h1>
+            <p
+              v-if="routeLine"
+              class="route-line"
+            >
+              {{ routeLine }}
+            </p>
+          </div>
           <div class="badges">
             <div class="badge">
               <b>{{ itinerary.days }}</b>
               <span>{{ t('trip.days') }}</span>
             </div>
-            <div class="badge hl">
+            <div class="badge">
               <b>{{ itinerary.nights }}</b>
               <span>{{ t('trip.nights') }}</span>
             </div>
           </div>
         </div>
-        <div
-          class="hero"
-          :style="heroStyle"
-        >
-          <div class="tagg">
-            {{ itinerary.card.highlights.join(' · ').toUpperCase() }}
-          </div>
+        <div class="hero">
+          <img
+            v-if="photo"
+            class="photo"
+            :src="photo"
+            :alt="itinerary.card.hero_alt || itinerary.name"
+          >
+          <div
+            v-else
+            class="grad"
+            :style="heroStyle"
+          />
         </div>
+        <p class="desc">
+          {{ itinerary.detail.long_description || itinerary.overview }}
+        </p>
         <div
           v-if="itinerary.detail.facts.length"
           class="facts"
@@ -211,6 +285,13 @@ function continueToCabins(): void {
             :key="fact[0]"
             class="fact"
           >
+            <img
+              class="fact-mark"
+              :src="prowMark"
+              alt=""
+              width="25"
+              height="13"
+            >
             <div class="fl">
               {{ fact[0] }}
             </div>
@@ -219,9 +300,6 @@ function continueToCabins(): void {
             </div>
           </div>
         </div>
-        <p class="desc">
-          {{ itinerary.detail.long_description || itinerary.overview }}
-        </p>
 
         <TripDepartureSwitcher
           :departures="itineraryDeps"
@@ -232,29 +310,28 @@ function continueToCabins(): void {
           :to-month="flow.toMonth"
           :party="party"
           :max-per-cabin="feed.settings.guests.max_per_cabin"
-          :days="itinerary.days"
-          :nights="itinerary.nights"
           @select="onSelect"
           @waitlist="onWaitlist"
         />
 
-        <div data-reveal>
+        <div
+          class="trip-sheet"
+          :data-open="tab"
+        >
           <div class="tabs">
             <button
               v-for="item in tabs"
               :key="item.id"
               type="button"
               class="tab"
+              :data-id="item.id"
               :class="{ cur: tab === item.id }"
               @click="tab = item.id"
             >
               {{ item.label }}
             </button>
           </div>
-          <div
-            v-if="tab !== 'route'"
-            class="tabbody"
-          >
+          <div class="tabbody">
             <template v-if="tab === 'overview'">
               <h6>{{ t('trip.highlights') }}</h6>
               <div
@@ -264,6 +341,15 @@ function continueToCabins(): void {
               >
                 {{ row }}
               </div>
+            </template>
+            <template v-else-if="tab === 'route' && mapData">
+              <ClientOnly>
+                <TripRouteMap
+                  :data="mapData"
+                  :itinerary-name="itinerary.name"
+                  :itinerary-code="itinerary.code"
+                />
+              </ClientOnly>
             </template>
             <template v-else-if="tab === 'itinerary'">
               <h6>{{ t('trip.dayByDay') }}</h6>
@@ -301,20 +387,29 @@ function continueToCabins(): void {
               <div
                 v-for="faq in itinerary.detail.faqs"
                 :key="faq[0]"
-                class="hlrow"
+                class="faq"
               >
-                <b>{{ faq[0] }}</b>
-                {{ faq[1] }}
+                <button
+                  type="button"
+                  class="faq-q"
+                  :aria-expanded="openFaq === faq[0]"
+                  @click="toggleFaq(faq[0])"
+                >
+                  {{ faq[0] }}
+                  <span
+                    class="faq-plus"
+                    aria-hidden="true"
+                  />
+                </button>
+                <p
+                  v-if="openFaq === faq[0]"
+                  class="faq-a"
+                >
+                  {{ faq[1] }}
+                </p>
               </div>
             </template>
           </div>
-          <ClientOnly v-if="tab === 'route' && mapData">
-            <TripRouteMap
-              :data="mapData"
-              :itinerary-name="itinerary.name"
-              :itinerary-code="itinerary.code"
-            />
-          </ClientOnly>
         </div>
 
         <div class="dt-actions">
@@ -322,6 +417,10 @@ function continueToCabins(): void {
             to="/itineraries"
             class="btn o"
           >
+            <span
+              class="dep-go go-back"
+              aria-hidden="true"
+            />
             {{ t('trip.back') }}
           </NuxtLink>
           <button
@@ -330,7 +429,10 @@ function continueToCabins(): void {
             @click="continueToCabins"
           >
             <span class="lb">{{ t('trip.selectCabins') }}</span>
-            <span class="ico">→</span>
+            <span
+              class="dep-go"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>

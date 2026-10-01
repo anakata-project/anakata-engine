@@ -163,7 +163,7 @@ onMounted(async () => {
       targetL = stopS[i] ?? routeLen
     }
     const sites = (day.am ? `<b>AM</b>${day.am}<br>` : '') + (day.pm ? `<b>PM</b>${day.pm}` : '')
-    dayCard.innerHTML = `<div class="cday">Day ${day.d} · ${day.wd}</div><h2>${day.title}</h2>
+    dayCard.innerHTML = `<button type="button" class="card-x" aria-label="${t('map.close')}"></button><div class="cday">Day ${day.d} · ${day.wd}</div><h2>${day.title}</h2>
       <div class="sites">${sites}</div><p>${day.desc}</p>
       <div class="tags">${day.wild.map(w => `<span class="tag w">${w}</span>`).join('')}${day.acts.map(a => `<span class="tag">${a}</span>`).join('')}</div>`
     const p = proj([day.lon, day.lat]) as [number, number]
@@ -356,13 +356,23 @@ onMounted(async () => {
     }
   }
 
+  const onCardClick = (event: MouseEvent): void => {
+    event.stopPropagation()
+    const target = event.target
+    if (target instanceof Element && target.closest('.card-x')) {
+      unfocus(true)
+    }
+  }
+
   window.addEventListener('resize', onResizeDebounced)
   mapWrap.addEventListener('click', onWrapClick)
+  dayCard.addEventListener('click', onCardClick)
   document.addEventListener('keydown', onKey)
 
   cleanup = [
     () => window.removeEventListener('resize', onResizeDebounced),
     () => mapWrap.removeEventListener('click', onWrapClick),
+    () => dayCard.removeEventListener('click', onCardClick),
     () => document.removeEventListener('keydown', onKey),
     () => {
       cancelAnimationFrame(raf)

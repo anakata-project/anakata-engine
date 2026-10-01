@@ -1,4 +1,4 @@
-export type FlowStep = 1 | 2 | 3 | 4 | 5 | 6
+import type { FlowStep } from '../utils/flowStep'
 
 export function useFlowStep() {
   const route = useRoute()

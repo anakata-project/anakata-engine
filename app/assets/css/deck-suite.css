@@ -1,0 +1,51 @@
+.deck-plan svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.deck-plan .suite {
+  cursor: pointer;
+}
+
+.deck-plan .suite.is-available .suite-shape {
+  fill: #202b26;
+  stroke: #202b26;
+  stroke-dasharray: none;
+}
+
+.deck-plan .suite.is-available .suite-label {
+  fill: #f2f1e1;
+}
+
+.deck-plan .suite.is-available .suite-bed {
+  stroke: #f2f1e1;
+}
+
+.deck-plan .suite.is-hold .suite-shape {
+  fill: #e0d5b8;
+  stroke: #585940;
+  stroke-dasharray: none;
+}
+
+.deck-plan .suite.is-hold .suite-bed {
+  stroke: #202b26;
+}
+
+.deck-plan .suite.is-selected .suite-shape {
+  fill: var(--coral);
+  stroke: var(--coral);
+  stroke-dasharray: none;
+}
+
+.deck-plan .suite.is-selected .suite-label {
+  fill: #fffef3;
+}
+
+.deck-plan .suite.is-selected .suite-bed {
+  stroke: #fffef3;
+}
+
+.deck-plan .suite:focus-visible .suite-shape {
+  stroke: var(--coral);
+}

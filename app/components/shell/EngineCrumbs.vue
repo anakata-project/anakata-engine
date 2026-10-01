@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FlowStep } from '../../composables/useFlowStep'
+import { stepMark, type FlowStep } from '../../utils/flowStep'
 
 const { t } = useI18n()
 const { step } = useFlowStep()
@@ -12,32 +12,26 @@ const crumbs = computed(() => [
   { step: 5 as FlowStep, label: t('crumbs.details') },
   { step: 6 as FlowStep, label: t('crumbs.confirmation') }
 ])
-
-function crumbClass(crumbStep: FlowStep): string {
-  if (step.value === crumbStep) {
-    return 'cur'
-  }
-
-  if (step.value !== null && crumbStep < step.value) {
-    return 'done'
-  }
-
-  return ''
-}
 </script>
 
 <template>
-  <div
+  <nav
     v-if="step"
-    class="crumbs"
+    class="stepper"
+    :style="{ '--step': step ?? 1 }"
+    :aria-label="t('crumbs.itinerary')"
   >
     <div
       v-for="crumb in crumbs"
       :key="crumb.step"
-      class="crumb"
-      :class="crumbClass(crumb.step)"
+      class="step"
+      :class="stepMark(step, crumb.step)"
     >
-      {{ crumb.label }}
+      <span
+        class="dot"
+        aria-hidden="true"
+      />
+      <span class="lbl">{{ crumb.label }}</span>
     </div>
-  </div>
+  </nav>
 </template>

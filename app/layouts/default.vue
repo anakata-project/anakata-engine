@@ -5,8 +5,11 @@ const { showHero, showCrumbs } = useFlowStep()
 <template>
   <div class="engine">
     <ShellEngineHeader />
-    <div class="wrap stage">
-      <ShellEngineHero v-if="showHero" />
+    <ShellEngineHero v-if="showHero" />
+    <div
+      class="wrap stage"
+      :class="{ home: showHero }"
+    >
       <ShellEngineCrumbs v-if="showCrumbs" />
       <slot />
     </div>
