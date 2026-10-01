@@ -31,6 +31,7 @@ export type BookingFlow = {
   cabins: Array<CabinSelection>
   selectedCabinIndex: number
   path: CheckoutPath
+  title: string
   firstName: string
   lastName: string
   email: string
@@ -63,6 +64,7 @@ export function emptyFlow(): BookingFlow {
     cabins: [],
     selectedCabinIndex: 0,
     path: 'PAY_LATER',
+    title: '',
     firstName: '',
     lastName: '',
     email: '',

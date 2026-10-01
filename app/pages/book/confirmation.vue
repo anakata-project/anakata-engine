@@ -2,10 +2,11 @@
 import type { CheckoutStatus } from '../../types/api'
 import { confirmationScreen, POLL_INTERVAL_MS } from '../../utils/confirmationPoll'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const { flow } = useBookingFlow()
 const checkout = useCheckout()
+const { format } = useMoney()
 const { data: feed } = useEngineFeed()
 
 useHead({ title: t('pages.confirmation') })
@@ -15,9 +16,13 @@ const nowTick = ref(Date.now())
 const status = ref<CheckoutStatus | null>(null)
 const purchased = ref(false)
 
-if (import.meta.client && !flow.value.confirmation && !route.query.session_id && !flow.value.checkoutToken) {
-  await navigateTo('/')
-}
+onMounted(async () => {
+  await nextTick()
+
+  if (!flow.value.confirmation && !route.query.session_id && !flow.value.checkoutToken) {
+    await navigateTo('/')
+  }
+})
 
 const path = computed(() =>
   flow.value.confirmation?.path
@@ -46,6 +51,100 @@ const email = computed(() =>
 )
 
 const sla = computed(() => feed.value?.settings.policies.response_sla_hours ?? 24)
+
+const departure = computed(() =>
+  feed.value?.departures.find(item => item.id === flow.value.departureId) ?? null
+)
+
+const depositPct = computed(() => {
+  const quoted = flow.value.serverQuote?.cabins[0]?.quote?.deposit_pct
+
+  if (typeof quoted === 'number') {
+    return quoted
+  }
+
+  return feed.value?.rates.terms.cabin_deposit_pct ?? 0
+})
+
+const balanceAmount = computed(() => {
+  const total = flow.value.serverQuote?.total
+  const deposit = flow.value.serverQuote?.deposit
+
+  if (typeof total !== 'number' || typeof deposit !== 'number') {
+    return null
+  }
+
+  return Math.max(0, total - deposit)
+})
+
+const balanceDays = computed(() =>
+  flow.value.serverQuote?.terms.balance_days
+  ?? feed.value?.rates.terms.cabin_balance_days
+  ?? 0
+)
+
+function suiteName(code: string): string {
+  if (/owner/i.test(code)) {
+    return t('confirm.ownerSuite')
+  }
+
+  const number = code.replace(/^suite\s+/i, '')
+
+  return t('confirm.standardSuite', { code: number })
+}
+
+const suitePhrase = computed(() =>
+  flow.value.cabins
+    .map(cabin => cabin.cabinCode)
+    .filter((code): code is string => Boolean(code))
+    .map(code => suiteName(code))
+    .join(', ')
+)
+
+const departureDate = computed(() => {
+  const iso = departure.value?.embark
+
+  if (!iso) {
+    return ''
+  }
+
+  const [year, month, day] = iso.split('-').map(Number)
+
+  return new Intl.DateTimeFormat(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1)))
+})
+
+const referenceText = computed(() => {
+  if (!references.value.length) {
+    return ''
+  }
+
+  const key = path.value === 'PAY_DEPOSIT' ? 'confirm.bookingRef' : 'confirm.requestRef'
+
+  return t(key, { ref: references.value.join(' · ') })
+})
+
+const paidLead = computed(() => {
+  const yacht = departure.value?.yacht ?? ''
+  const suite = suitePhrase.value
+  const date = departureDate.value
+
+  if (!yacht || !suite || !date) {
+    return t('confirm.paidLeadPlain', { email: email.value })
+  }
+
+  return t('confirm.paidLead', {
+    pct: depositPct.value,
+    suite,
+    yacht,
+    date,
+    email: email.value
+  })
+})
 const steps = computed(() => {
   const raw = feed.value?.settings.copy.confirmation_steps ?? []
 
@@ -154,10 +253,10 @@ const heading = computed(() => {
       {{ heading.t }}
     </h1>
     <div
-      v-if="references.length"
+      v-if="referenceText"
       class="bigid"
     >
-      {{ references.join(' · ') }}
+      {{ referenceText }}
     </div>
     <p
       v-if="screen === 'confirming'"
@@ -182,13 +281,13 @@ const heading = computed(() => {
       v-else-if="screen === 'confirmed'"
       class="sub"
     >
-      {{ t('confirm.paidLead', { email }) }}
+      {{ paidLead }}
     </p>
     <p
       v-else
       class="sub"
     >
-      {{ t('confirm.requestLead', { email }) }}
+      {{ t('confirm.requestLead') }}
     </p>
     <div
       v-if="screen === 'pay_later'"
@@ -213,13 +312,17 @@ const heading = computed(() => {
         <div class="n">
           1
         </div>
-        <p>{{ t('confirm.paid1') }}</p>
+        <p>{{ t('confirm.paid1', { hours: sla }) }}</p>
       </div>
       <div class="nx">
         <div class="n">
           2
         </div>
-        <p>{{ t('confirm.paid2') }}</p>
+        <p>
+          {{ balanceAmount !== null
+            ? t('confirm.paid2', { amount: format(balanceAmount), days: balanceDays })
+            : t('confirm.paid2Plain') }}
+        </p>
       </div>
       <div class="nx">
         <div class="n">

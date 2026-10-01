@@ -15,17 +15,44 @@ const { format } = useMoney()
 
 const isFinal = computed(() => props.quote?.total !== null && props.quote?.total !== undefined)
 
-const depositLabel = computed(() => {
-  const pct = props.quote?.cabins[0]?.quote?.deposit_pct
-    ?? props.estimate.depositPct
-  const days = props.quote?.terms.balance_days ?? props.estimate.balanceDays
+const depositPct = computed(() =>
+  props.quote?.cabins[0]?.quote?.deposit_pct ?? props.estimate.depositPct
+)
 
-  if (props.path === 'PAY_DEPOSIT') {
-    return `Deposit paid online today (${pct}%)`
+const balanceDays = computed(() =>
+  props.quote?.terms.balance_days ?? props.estimate.balanceDays
+)
+
+const depositAmount = computed(() =>
+  props.quote?.deposit ?? props.estimate.deposit
+)
+
+const totalAmount = computed(() =>
+  props.quote?.total ?? props.estimate.invoiceTotal
+)
+
+const balanceAmount = computed(() => {
+  const total = totalAmount.value
+  const deposit = depositAmount.value
+
+  if (total === null || total === undefined || deposit === null || deposit === undefined) {
+    return 0
   }
 
-  return `Deposit on confirmation (${pct}%) · balance ${days} days before departure`
+  return total - deposit
 })
+
+const depositLabel = computed(() => {
+  if (props.path === 'PAY_DEPOSIT') {
+    return `Deposit paid online today (${depositPct.value}%)`
+  }
+
+  return `Deposit on confirmation (${depositPct.value}%)`
+})
+
+const balanceLabel = computed(() =>
+  `Balance · ${balanceDays.value} days before departure`
+)
 </script>
 
 <template>
@@ -78,7 +105,11 @@ const depositLabel = computed(() => {
       </div>
       <div class="line">
         <span>{{ depositLabel }}</span>
-        <span>{{ format(quote.deposit ?? 0) }}</span>
+        <span>{{ format(depositAmount) }}</span>
+      </div>
+      <div class="line">
+        <span>{{ balanceLabel }}</span>
+        <span>{{ format(balanceAmount) }}</span>
       </div>
     </template>
     <template v-else>
@@ -118,7 +149,11 @@ const depositLabel = computed(() => {
       </div>
       <div class="line">
         <span>{{ depositLabel }}</span>
-        <span>{{ formatUsd(estimate.deposit) }}</span>
+        <span>{{ formatUsd(depositAmount) }}</span>
+      </div>
+      <div class="line">
+        <span>{{ balanceLabel }}</span>
+        <span>{{ formatUsd(balanceAmount) }}</span>
       </div>
     </template>
     <p

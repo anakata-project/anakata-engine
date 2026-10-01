@@ -12,7 +12,7 @@ import { onlineDepositForPath, requiredDeclarations } from '../../utils/pathQuot
 import { estimatePrice } from '../../utils/priceEstimate'
 import { applyPromoResult, removePromoForReason } from '../../utils/promoState'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { request } = useApi()
@@ -58,6 +58,7 @@ const itinerary = computed(() =>
 const settings = computed(() => feed.value?.settings ?? null)
 const promoInput = ref(flow.value.promo.code ?? '')
 const bad = reactive({
+  title: false,
   firstName: false,
   lastName: false,
   email: false,
@@ -311,6 +312,7 @@ function toggleDeclaration(document: string, checked: boolean): void {
 }
 
 function validForm(): boolean {
+  bad.title = !flow.value.title
   bad.firstName = !flow.value.firstName.trim()
   bad.lastName = !flow.value.lastName.trim()
   bad.email = !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(flow.value.email)
@@ -320,7 +322,7 @@ function validForm(): boolean {
   const needed = requiredDeclarations(flow.value.path)
   const missingDocs = needed.some(document => !flow.value.declarations.includes(document))
 
-  return !bad.firstName && !bad.lastName && !bad.email && !bad.phone && !missingGuests && !missingDocs
+  return !bad.title && !bad.firstName && !bad.lastName && !bad.email && !bad.phone && !missingGuests && !missingDocs
 }
 
 async function submit(path: 'PAY_LATER' | 'PAY_DEPOSIT'): Promise<void> {
@@ -416,20 +418,61 @@ function acceptPrice(): void {
 
 const cancelled = computed(() => route.query.cancelled === '1')
 
-const label = computed(() => {
+const depositPct = computed(() => {
+  const quoted = flow.value.serverQuote?.cabins[0]?.quote?.deposit_pct
+
+  if (typeof quoted === 'number') {
+    return quoted
+  }
+
+  return estimate.value?.depositPct ?? 0
+})
+
+// TODO(OPEN: checkout title) The design shows a title select. SubmitCheckoutRequest
+// has no title field, so the value stays on the session flow and is not submitted.
+const titleItems = computed(() => [
+  t('details.titleMr'),
+  t('details.titleMrs'),
+  t('details.titleMs'),
+  t('details.titleMx'),
+  t('details.titleDr')
+])
+
+const kicker = computed(() => {
   if (!itinerary.value || !departure.value) {
     return ''
   }
 
-  return `${itinerary.value.name} · ${departure.value.yacht} · ${formatIsoDate(departure.value.embark)}`
-})
+  const parts = departure.value.embark.split('-')
+  const year = Number(parts[0])
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  const date = new Intl.DateTimeFormat(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+  const adults = t('search.adultsCount', { n: flow.value.adults })
+  const children = flow.value.children > 0
+    ? ` / ${t('search.childrenCount', { n: flow.value.children })}`
+    : ''
+  const suites = flow.value.cabins
+    .filter(cabin => cabin.cabinCode)
+    .map((cabin) => {
+      const kind = cabinCategories.value[cabin.cabinCode ?? ''] === 'OWNER'
+        ? t('cabins.ownerName')
+        : t('details.standardSuite')
+      const suiteAdults = t('search.adultsCount', { n: cabin.adults })
+      const suiteChildren = cabin.children > 0
+        ? ` / ${t('search.childrenCount', { n: cabin.children })}`
+        : ''
 
-const payToday = computed(() => {
-  if (flow.value.path === 'PAY_DEPOSIT') {
-    return format(flow.value.serverQuote?.deposit ?? estimate.value?.deposit ?? 0)
-  }
+      return `${kind} / ${suiteAdults}${suiteChildren}`
+    })
+    .join(' / ')
 
-  return format(0)
+  return `${date} / ${adults}${children} / ${itinerary.value.name} / ${departure.value.yacht}${suites ? ` / ${suites}` : ''}`
 })
 
 const versions = computed(() => settings.value?.legal.consent_versions)
@@ -456,31 +499,63 @@ const declarationItems = computed(() => {
 </script>
 
 <template>
-  <div v-if="feed && departure && settings && estimate">
-    <span class="mono klabel">{{ label }}</span>
-    <h1 class="disp">
-      {{ t('details.title') }}
-    </h1>
-    <p class="sub">
-      {{ t('details.sub') }}
-    </p>
-    <p
-      v-if="hold.expired || cancelled"
-      class="cabwarn"
-    >
-      ⚠ {{ hold.expired ? hold.releasedMessage : t('details.cancelled') }}
-    </p>
-    <div class="wgrid">
+  <div
+    v-if="feed && departure && settings && estimate"
+    class="details-page"
+  >
+    <div class="details-layout">
       <div>
-        <div class="fsec">
-          <h3>{{ t('details.contact') }}</h3>
-          <div class="cols2">
+        <span class="mono trip-kicker">{{ kicker }}</span>
+        <h1 class="disp">
+          {{ t('details.title') }}
+        </h1>
+        <p class="sub">
+          {{ t('details.sub') }}
+        </p>
+        <p
+          v-if="hold.expired || cancelled"
+          class="cabwarn"
+        >
+          ⚠ {{ hold.expired ? hold.releasedMessage : t('details.cancelled') }}
+        </p>
+        <section>
+          <h2>{{ t('details.contact') }}</h2>
+          <div class="contact-names">
+            <div
+              class="field"
+              :class="{ bad: bad.title }"
+            >
+              <label for="d-title">{{ t('details.titleLabel') }}</label>
+              <select
+                id="d-title"
+                v-model="flow.title"
+                :class="{ 'is-placeholder': !flow.title }"
+              >
+                <option value="">
+                  {{ t('details.titleSelect') }}
+                </option>
+                <option
+                  v-for="item in titleItems"
+                  :key="item"
+                  :value="item"
+                >
+                  {{ item }}
+                </option>
+              </select>
+              <div class="err">
+                {{ t('details.required') }}
+              </div>
+            </div>
             <div
               class="field"
               :class="{ bad: bad.firstName }"
             >
-              <label>{{ t('details.firstName') }}</label>
-              <input v-model="flow.firstName">
+              <label for="d-fn">{{ t('details.firstName') }}</label>
+              <input
+                id="d-fn"
+                v-model="flow.firstName"
+                :placeholder="t('details.namePh')"
+              >
               <div class="err">
                 {{ t('details.required') }}
               </div>
@@ -489,8 +564,12 @@ const declarationItems = computed(() => {
               class="field"
               :class="{ bad: bad.lastName }"
             >
-              <label>{{ t('details.lastName') }}</label>
-              <input v-model="flow.lastName">
+              <label for="d-ln">{{ t('details.lastName') }}</label>
+              <input
+                id="d-ln"
+                v-model="flow.lastName"
+                :placeholder="t('details.namePh')"
+              >
               <div class="err">
                 {{ t('details.required') }}
               </div>
@@ -501,26 +580,24 @@ const declarationItems = computed(() => {
               class="field"
               :class="{ bad: bad.email }"
             >
-              <label>{{ t('details.email') }}</label>
+              <label for="d-em">{{ t('details.email') }}</label>
               <input
+                id="d-em"
                 v-model="flow.email"
                 type="email"
+                :placeholder="t('details.emailPh')"
               >
               <div class="err">
                 {{ t('details.emailErr') }}
               </div>
-              <UCheckbox
-                v-model="flow.cartMarketing"
-                :label="t('details.checkoutMarketing')"
-                :ui="checkUi"
-              />
             </div>
             <div
               class="field"
               :class="{ bad: bad.phone }"
             >
-              <label>{{ t('details.phone') }}</label>
+              <label for="d-ph">{{ t('details.phone') }}</label>
               <input
+                id="d-ph"
                 v-model="flow.phone"
                 :placeholder="t('details.phonePh')"
               >
@@ -544,30 +621,38 @@ const declarationItems = computed(() => {
               </button>
             </div>
           </div>
-          <UCheckbox
-            v-model="flow.travelAdvisor"
-            :label="t('details.advisor')"
-            :ui="checkUi"
-          />
+          <label class="chkrow">
+            <input
+              v-model="flow.travelAdvisor"
+              type="checkbox"
+            >
+            <span>{{ t('details.advisor') }}</span>
+          </label>
           <div class="field">
-            <label>{{ t('details.notes') }}</label>
+            <label for="d-notes">{{ t('details.notes') }}</label>
             <textarea
+              id="d-notes"
               v-model="flow.notes"
-              rows="3"
+              rows="2"
               :placeholder="t('details.notesPh')"
             />
           </div>
-          <UCheckbox
-            v-model="flow.marketing"
-            :label="t('details.marketing')"
-            :ui="checkUi"
-          />
-          <p class="note">
+          <label class="chkrow">
+            <input
+              v-model="flow.marketing"
+              type="checkbox"
+            >
+            <span>{{ t('details.marketing') }}</span>
+          </label>
+          <p
+            v-if="settings.copy.details_note"
+            class="note"
+          >
             {{ settings.copy.details_note }}
           </p>
-        </div>
+        </section>
 
-        <div class="fsec">
+        <section class="details-block">
           <h3>{{ t('details.guests') }}</h3>
           <div
             v-for="(guest, index) in flow.guests"
@@ -590,7 +675,6 @@ const declarationItems = computed(() => {
               <label aria-hidden="true">&nbsp;</label>
               <UCheckbox
                 v-model="guest.ecuadorResident"
-                class="guest-check"
                 :label="t('details.ecuador')"
                 :ui="{ root: 'items-center gap-3 min-h-[46px]', label: 'font-sans font-normal text-[13.5px] text-(--ivory)' }"
               />
@@ -599,9 +683,9 @@ const declarationItems = computed(() => {
           <p class="note">
             {{ t('details.pngDob') }}
           </p>
-        </div>
+        </section>
 
-        <div class="fsec">
+        <section class="details-block">
           <h3>{{ t('details.fees') }}</h3>
           <div class="field">
             <label>{{ t('details.pngChoice') }}</label>
@@ -648,9 +732,9 @@ const declarationItems = computed(() => {
           <p class="note">
             {{ t('details.depositWording', { hours: extrasHours }) }}
           </p>
-        </div>
+        </section>
 
-        <div class="fsec">
+        <section class="details-block">
           <h3>{{ t('details.declarations') }}</h3>
           <UCheckbox
             v-for="item in declarationItems"
@@ -667,8 +751,11 @@ const declarationItems = computed(() => {
               </template>
             </template>
           </UCheckbox>
-        </div>
+        </section>
 
+        <h2 class="proceed-title">
+          {{ t('details.proceed') }}
+        </h2>
         <div class="paths">
           <div
             class="path"
@@ -680,7 +767,7 @@ const declarationItems = computed(() => {
             </div>
             <h4>{{ t('details.opt1Title') }}</h4>
             <div class="pd">
-              {{ t('details.opt1Body') }}
+              {{ t('details.opt1Body', { pct: depositPct }) }}
             </div>
             <div class="pay">
               {{ t('details.payToday') }} · {{ format(0) }}
@@ -702,22 +789,20 @@ const declarationItems = computed(() => {
             <div class="ph">
               {{ t('details.opt2') }}
             </div>
-            <span class="perk">{{ settings.copy.online_deposit_advantage }} · {{ settings.copy.online_deposit_perk }}</span>
             <h4>{{ t('details.opt2Title') }}</h4>
             <div class="pd">
-              {{ t('details.opt2Body') }}
+              {{ t('details.opt2Body', { pct: depositPct }) }}
             </div>
             <div class="pay">
-              {{ t('details.payToday') }} · {{ format(flow.serverQuote?.deposit ?? estimate.deposit) }}
+              {{ t('details.payToday') }} · {{ format(flow.serverQuote?.deposit ?? estimate.deposit) }} {{ t('details.depositShare', { pct: depositPct }) }}
             </div>
             <button
               type="button"
-              class="btn cta"
+              class="btn"
               :disabled="checkout.submitting"
               @click.stop="submit('PAY_DEPOSIT')"
             >
-              <span class="lb">{{ t('details.payDeposit') }}</span>
-              <span class="ico">→</span>
+              {{ t('details.payDeposit') }}
             </button>
           </div>
         </div>
@@ -737,13 +822,18 @@ const declarationItems = computed(() => {
         </div>
         <button
           type="button"
-          class="btn o"
+          class="btn o details-back"
           @click="back"
         >
+          <span
+            class="dep-go go-back"
+            aria-hidden="true"
+          />
           {{ t('details.back') }}
         </button>
       </div>
       <PricePanel
+        class="suite-rail details-rail"
         :quote="flow.serverQuote"
         :estimate="estimate"
         :settings="settings"
@@ -755,15 +845,6 @@ const declarationItems = computed(() => {
           :state="flow.promo"
           @apply="applyPromo"
         />
-        <div class="payzero">
-          <div class="r">
-            <span>{{ t('details.payToday') }}</span>
-            <span>{{ payToday }}</span>
-          </div>
-          <p>
-            {{ flow.path === 'PAY_LATER' ? settings.copy.pay_today : t('details.payOnlineNote') }}
-          </p>
-        </div>
       </PricePanel>
     </div>
   </div>
