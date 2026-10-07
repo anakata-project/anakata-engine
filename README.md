@@ -40,7 +40,7 @@ Placeholder routes (flow built in Sprint 8): `/`, `/itineraries`, `/itineraries/
 
 ## Deploy (Netlify)
 
-`netlify.toml` owns the build command (`pnpm build`) and publish directory (`dist`). Do not set those in the Netlify UI. Set `NUXT_PUBLIC_API_BASE` in the site env.
+`netlify.toml` owns the build command (`pnpm generate`) and publish directory (`.output/public`). Do not set those in the Netlify UI. Set `NUXT_PUBLIC_API_BASE` in the site env.
 
 The API must allow this origin: `FRONTEND_ENGINE_URL`, plus the host in `SANCTUM_STATEFUL_DOMAINS`.
 
